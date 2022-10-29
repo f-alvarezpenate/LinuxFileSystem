@@ -11,7 +11,10 @@ int cd()
   }
   MINODE *mip = iget(dev, ino); 
   //verify mip->INODE is a DIR  MAYBE: if(S_ISDIR(mip->INODE->st_mode))
-  
+  if (!S_ISDIR(mip->INODE.i_mode)){
+    printf("THIS IS NOT A DIRECTORY!");
+    return;
+  }
   iput(running->cwd); // release old cwd
   running->cwd = mip; // change cwd to mip
 }
@@ -23,6 +26,7 @@ int ls_file(MINODE *mip, char *name)
 { 
   int i;
   char ftime[64];
+  char linkname[256];
   
   //printf("ls_file: to be done: READ textbook!!!!\n");
   // READ Chapter 11.7.3 HOW TO ls
@@ -34,14 +38,15 @@ int ls_file(MINODE *mip, char *name)
     printf("%c",'-');
   if ((ip->i_mode & 0xF000) == 0x4000) // if (S_ISDIR())
     printf("%c",'d');
-  
+  if ((ip->i_mode & 0xF000) == 0xA000) // if (S_ISLNK())
+    printf("%c",'l');
   for (i = 8; i >= 0; i--) {
     if (ip->i_mode & (1 << i)) // print r|w|x
       printf("%c",t1[i]);
     else 
       printf("%c", t2[i]);  // or print '-'
   }
-
+  printf("%4d ", ip->i_links_count); // number of links
   printf("%4d ", ip->i_gid); // gid
   printf("%4d ", ip->i_uid); // uid
   printf("%8d ", ip->i_size); // file size
@@ -55,8 +60,12 @@ int ls_file(MINODE *mip, char *name)
   // print name
   printf("%s", basename(name)); // print file basename
   
-  
-   printf("\n");
+  if ((ip->i_mode & 0xF000) == 0xA000){
+    //use readlink()
+    readlink(name,linkname,256);
+    printf(" -> %s", linkname); // print linked name
+  }
+  printf("\n");
 }
 
 int ls_dir(MINODE *mip)
@@ -97,7 +106,6 @@ int ls_dir(MINODE *mip)
 int ls()
 {
   //printf("ls: list CWD only! YOU FINISH IT for ls pathname\n");
-  printf("PATHNAME: %s", pathname);
   if(strcmp(pathname,"")){
 	  int ino = getino(pathname);
 	  //ls_dir(running->cwd);
