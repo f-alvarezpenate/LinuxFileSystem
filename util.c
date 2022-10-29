@@ -222,17 +222,15 @@ int findmyname(MINODE *parent, u32 myino, char myname[ ])
    INODE *ip;
 
    /*** search for name in parent's data blocks: ASSUME i_block[0] ONLY ***/
+   // changed from ip->INODE.I_block to parent->INODE.i_block
    get_block(dev, parent->INODE.i_block[0], buf);
    dp = (DIR *)buf;
    cp = buf;
    
 
-   while (cp < buf + BLKSIZE){
-     //printf("%4d  %4d  %4d    %s\n", 
-	    //dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
-
+   while (cp < buf + BLKSIZE)
+   {
      if (dp->inode == myino){           
-        printf("found %s : ino = %d\n", temp, dp->inode);
         strncpy(myname, dp->name, dp->name_len);
         myname[dp->name_len] = 0;
         return 0;
