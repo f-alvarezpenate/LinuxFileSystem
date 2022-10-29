@@ -111,28 +111,35 @@ int ls()
 char *pwd(MINODE *wd)
 {
   //printf("pwd: READ HOW TO pwd in textbook!!!!\n");
+  printf("pwd: \n");
   if (wd == root){
     printf("/\n");
     return;
   }
   else{
   	rpwd(wd);
+    printf("\n");
   }
-  pwd(running->cwd);
+  
 }
 
-void rpwd(MINODE *wd){  //DOESN'T WORK
-  if (wd==root) return;
-   //from wd->INODE.i_block[0], get my_ino and parent_ino
-  int *parent_ino;
-  int ino = findino(wd->INODE.i_block[0], parent_ino);
+int rpwd(MINODE *wd){  //DOESN'T WORK
+  if (wd==root) return 0;
+  
+  int my_ino, parent_ino;
+  char buf[BLKSIZE], my_name[256];
+  
+  // getting parent_ino from current node
+  parent_ino = findino(wd, &my_ino);
+
+  // getting parent node from parent_ino
   MINODE *pip = iget(dev, parent_ino);
-  //from pip->INODE.i_block[]: get my_name string by my_ino as LOCAL 
-  char* my_name;
-  findmyname(pip, ino, my_name);
-  pwd(pip);
+
+  // from wd->INODE.i_block[0], get my_ino and parent_ino
+  findmyname(pip, my_ino, my_name);
+
+  // recursive call rpwd(pip) with parent minode
+  rpwd(pip);
+
   printf("/%s", my_name);
 }
-
-
-
