@@ -123,16 +123,16 @@ void iput(MINODE *mip)  // iput(): release a minode
 
   Write YOUR code here to write INODE back to disk
  *****************************************************/
- /*
- block = (mip->ino - 1) / 8 + iblock;
+ 
+ block = (mip->ino - 1) / 8 + iblk;
  offset = (mip->ino - 1) % 8;
  
  get_block(mip->dev, block, buf);
  ip = (INODE *) buf + offset;
  *ip = mip->INODE;
  put_block(mip->dev, block, buf);
- midalloc(mip);
- */
+ mip->refCount = 0;
+ 
 } 
 
 int search(MINODE *mip, char *name)
