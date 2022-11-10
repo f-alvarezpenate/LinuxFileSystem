@@ -1,6 +1,5 @@
 //#include "type.h"
 // mkdir, creat, enter_name
-
 int mymkdir()
 {
     MINODE *start;
