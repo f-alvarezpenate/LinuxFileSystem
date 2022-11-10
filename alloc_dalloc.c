@@ -61,8 +61,7 @@ int balloc(int dev) // allocates a disk block from block_bitmap
         if(tst_bit(buf, i) == 0)
         {
             set_bit(buf, i);
-            sp->s_free_blocks_count--; //decrement free block count in superblock
-            gp->bg_free_blocks_count--; //decrement free block count in group descriptor
+            decFreeInodes(dev);
             put_block(dev, bmap, buf);
             return i + 1;
         }
