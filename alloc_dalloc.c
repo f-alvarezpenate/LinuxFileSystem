@@ -1,7 +1,13 @@
 // ialloc/balloc, idalloc/bdalloc functions
 int tst_bit(char *buf, int bit); // Chapter 11.3.1
+{
+    return buf[bit/8] & (1 << (bit % 8));
+}
 
 int set_bit(char *buf, int bit); // Chapter 11.3.1
+{
+    buf[bit/8] |= (1 << (bit % 8));
+}
 
 
 //FUNCTIONS USED FOR MKDIR
@@ -48,7 +54,9 @@ int ialloc(int dev){ // allocate an inode number from inode_bitmap
 
 // FUNCTIONS USED FOR RMDIR
  
-int clr_bit(char *buf, int bit); // says was given before but uhhhhh 
+int clr_bit(char *buf, int bit){
+    buf[bit/8] &= ~(1 << (bit % 8));
+}
 
 int incFreeInodes(int dev){
     char buf[BLKSIZE];
@@ -85,6 +93,8 @@ int idalloc(int dev, int ino){
     incFreeInodes(dev);
 }
 
-//WRITE YOUR bdalloc() function which deallocates a block number
+/* WRITE YOUR bdalloc() function which deallocates a block number 
+Similar, except it uses the device's blocks bitmap and it increments 
+the free blocks count in both super block and groupdescriptor */
 // Assume: command line = "rmdir pathname"          ALg of rmdir: Chapter 11.8.4
 
