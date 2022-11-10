@@ -1,43 +1,39 @@
 //#include "type.h"
 // mkdir, creat, enter_name
-int mymkdir()
+int mymkdir(char *pathname)
 {
     MINODE *start;
-    char *parent, *child;
-    char ptemp[32], ctemp[32], c[1];
-    time_t *tp;
+    
+    char temp1[256], temp2[256];
+    strcpy(temp1, pathname);
+    strcpy(temp2, pathname);
 
-    sprintf(c, "%c", name[0]);
-
-    if(!strcmp(c, "/")) // root
+    //sprintf(c, "%c", name[0]);
+    
+    if(pathname[0] == '/') // root
     {
         start = root;
         dev = root->dev;
-        strcpy(ptemp, name);
-        parent = dirname(ptemp);
-        if(strcmp(parent, "."))
-        {
-            parent = "/";
-        }
+        
     }
     else // not root
     {
         start = running->cwd;
         dev = running->cwd->dev;
-        strcpy(ptemp, "./");
-        strcat(ptemp, name);
-        parent = dirname(ptemp);
+        
     }
+    //seg fault here
+    char *parent = dirname(temp1);
+    char *child = basename(temp2);
+
     
-    strcpy(ctemp, name);
-    child = basename(ctemp);
-
     printf("parent=%s child =%s\n", parent, child);
-
+    
     // getting minode of parent
     int pino = getino(parent);
+    
     MINODE *pip = iget(dev, pino);
-
+    
     // verifying that parent INODE is a DIR and child does not 
     // already exist in the parent directory
     if(S_ISDIR(pip->INODE.i_mode) && search(pip, child) == 0)
@@ -46,11 +42,11 @@ int mymkdir()
 
         pip->INODE.i_links_count++; // incrementing parent inodes link count
 
-        tp = pip->INODE.i_mtime;
-
         pip->INODE.i_mtime = time(0L);
 
         pip->dirty = 1; // marking as dirty since a change has been made
+
+        iput(pip);
     }
     
 }
@@ -105,6 +101,7 @@ int kmkdir(MINODE* pip, char* name)
     enter_name(pip, ino, name);
 
 }
+
 int enter_name(MINODE *pip, int myino, char *myname)
 {
     INODE *ip = &pip->INODE;
@@ -150,7 +147,7 @@ int enter_name(MINODE *pip, int myino, char *myname)
             remain = dp->rec_len - ideal_length;
             need_length = 4 * ((8 + strlen(myname) + 3) / 4);
 
-            if(remain <= need_length) //enter the new entry as the LAST entry and trim the previous entry rec len to its ideal length
+            if(remain >= need_length) //enter the new entry as the LAST entry and trim the previous entry rec len to its ideal length
             {
                 dp->rec_len = ideal_length;
 
