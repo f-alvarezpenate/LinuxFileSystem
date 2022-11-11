@@ -106,7 +106,7 @@ int rm_child(MINODE *pmip, char *name){
                         temp_dp = (DIR *) temp_cp;
                     }
                     temp_dp->rec_len += dp->rec_len;
-                    memmove(cp, cp + dp->rec_len, buf + BLKSIZE - cp - dp->rec_len);
+                    memcpy(dp,cp,dp->i_size);
                     put_block(dev, pmip->INODE.i_block[i], buf);
                 }
 

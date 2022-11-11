@@ -140,6 +140,8 @@ int main(int argc, char *argv[ ])
         mymkdir(pathname);
     else if (strcmp(cmd, "creat")==0)
         mycreat();
+    else if(strcmp(cmd, "rmdir")==0)
+    	rmdir();
   }
 }
 
