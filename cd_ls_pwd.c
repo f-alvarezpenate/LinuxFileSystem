@@ -96,6 +96,7 @@ int ls_dir(MINODE *mip)
      
      iput(dip); // iput()
      
+
      cp += dp->rec_len;
      dp = (DIR *)cp;
   }

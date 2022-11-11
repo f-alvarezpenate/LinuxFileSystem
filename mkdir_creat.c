@@ -42,7 +42,7 @@ int mymkdir(char *pathname)
 
         pip->INODE.i_links_count++; // incrementing parent inodes link count
 
-        pip->INODE.i_mtime = time(0L);
+        //pip->INODE.i_mtime = time(0L);
 
         pip->dirty = 1; // marking as dirty since a change has been made
 
@@ -168,10 +168,84 @@ int enter_name(MINODE *pip, int myino, char *myname)
 }
 int mycreat()
 {
+    MINODE *start;
+    
+    char temp1[256], temp2[256];
+    strcpy(temp1, pathname);
+    strcpy(temp2, pathname);
 
+    //sprintf(c, "%c", name[0]);
+    
+    if(pathname[0] == '/') // root
+    {
+        start = root;
+        dev = root->dev;
+        
+    }
+    else // not root
+    {
+        start = running->cwd;
+        dev = running->cwd->dev;
+        
+    }
+    //seg fault here
+    char *parent = dirname(temp1);
+    char *child = basename(temp2);
+
+    
+    printf("parent=%s child =%s\n", parent, child);
+    
+    // getting minode of parent
+    int pino = getino(parent);
+    
+    MINODE *pip = iget(dev, pino);
+    
+    // verifying that parent INODE is a DIR and child does not 
+    // already exist in the parent directory
+    if(S_ISDIR(pip->INODE.i_mode) && search(pip, child) == 0)
+    {
+        kcreat(pip, child); 
+
+        pip->INODE.i_links_count++; // incrementing parent inodes link count
+
+        //pip->INODE.i_mtime = time(0L);
+
+        pip->dirty = 1; // marking as dirty since a change has been made
+
+        iput(pip);
+    }
+    
 }
 
 int kcreat(MINODE* pip, char * name)
 {
+    char buf[BLKSIZE];
 
+    MINODE *mip;
+    int ino = ialloc(dev);
+    printf("ino= %d, bno=0\n", ino);
+
+    mip = iget(dev, ino);
+    INODE *ip = &mip->INODE;
+    ip->i_mode = 0x81A4; // REG type and permissions
+    ip->i_uid = running->uid; // owner uid
+    ip->i_gid = running->gid; // group id
+    ip->i_size = 0; // size in bytes
+    ip->i_links_count = 1; // links count 
+    ip->i_atime = time(0L);
+    ip->i_ctime = time(0L);
+    ip->i_mtime = time(0L);
+    ip->i_blocks = 2; // Linux: blocks count in 512 byte chunks
+    ip->i_block[0] = 0; // new REG has zero data block
+    for (int i = 1; i <= 14; i++)
+    {
+        ip->i_block[i] = 0;
+    }
+    
+    mip->dirty = 1; // mark minode as dirty
+    iput(mip); // write INODE to disk
+    
+    enter_name(pip, ino, name);
+
+    return ino;
 }
