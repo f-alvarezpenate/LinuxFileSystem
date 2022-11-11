@@ -26,7 +26,7 @@ int   n;         // number of component strings
 
 int  fd, dev;
 int  nblocks, ninodes, bmap, imap, iblk;
-char line[128], cmd[32], pathname[128];
+char line[128], cmd[32], pathname[128],filename[128];
 
 #include "cd_ls_pwd.c"
 //#include "util.c"
@@ -117,7 +117,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -125,9 +125,9 @@ int main(int argc, char *argv[ ])
        continue;
     pathname[0] = 0;
 
-    sscanf(line, "%s %s", cmd, pathname);
+    sscanf(line, "%s %s %s", cmd, pathname,filename);
     printf("cmd=%s pathname=%s\n", cmd, pathname);
-  
+
     if (strcmp(cmd, "ls")==0)
        ls(pathname); //add pathname
     else if (strcmp(cmd, "cd")==0)
@@ -141,7 +141,9 @@ int main(int argc, char *argv[ ])
     else if (strcmp(cmd, "creat")==0)
         mycreat();
     else if(strcmp(cmd, "rmdir")==0)
-    	rmdir();
+    	  myrmdir();
+    else if(strcmp(cmd, "link")==0)
+        link(pathname, filename);
   }
 }
 

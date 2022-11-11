@@ -33,17 +33,18 @@ int unlink(filename){
     }
     char temp1[64], temp2[64];
     strcpy(temp1, filename);
-    strcpy(temp2, filename);
+    strcpy(temp2, filename);  
+
     char *parent = dirname(temp1);
     char *child = dirname(temp2);
     int pino = getino(parent);
     MINODE* pmip = iget(dev,ino);
-    rm_child(pmip,ino,child);
+    //rm_child(pmip,ino,child);
     pmip->dirty=1;
     iput(pmip);
     mip->INODE.i_links_count--;
     if(mip->INODE.i_links_count > 0)
-        mip->drity = 1;
+        mip->dirty = 1;
     else{
         //deallocate all data blocks in inode;
         //deallocate inode;
