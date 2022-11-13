@@ -86,6 +86,7 @@ int ls_dir(MINODE *mip)
   cp = buf;
 
   while (cp < buf + BLKSIZE){
+    
      strncpy(temp, dp->name, dp->name_len);
      temp[dp->name_len] = 0;
 	
@@ -103,14 +104,24 @@ int ls_dir(MINODE *mip)
   //printf("\n"); // comment out
 }
 
-int ls()
+int ls(char *pathname)
 {
   //printf("ls: list CWD only! YOU FINISH IT for ls pathname\n");
   if(strcmp(pathname,"")){
 	  int ino = getino(pathname);
 	  //ls_dir(running->cwd);
 	  MINODE *mip = iget(dev, ino); 
-	  ls_dir(mip);
+
+    if (S_ISDIR(mip->INODE.i_mode))
+    {
+      ls_dir(mip);
+    }
+    else
+    {
+      ls_file(mip, basename(pathname));
+    }
+    iput(mip);
+	  
   }
   else
   	ls_dir(running->cwd);

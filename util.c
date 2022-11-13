@@ -124,6 +124,7 @@ void iput(MINODE *mip)  // iput(): release a minode
   Write YOUR code here to write INODE back to disk
  *****************************************************/
  
+ 
  block = (mip->ino - 1) / 8 + iblk;
  offset = (mip->ino - 1) % 8;
  

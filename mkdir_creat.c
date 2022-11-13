@@ -36,18 +36,27 @@ int mymkdir(char *pathname)
     
     // verifying that parent INODE is a DIR and child does not 
     // already exist in the parent directory
-    if(S_ISDIR(pip->INODE.i_mode) && search(pip, child) == 0)
+   if(!S_ISDIR(pip->INODE.i_mode))
     {
-        kmkdir(pip, child); 
-
-        pip->INODE.i_links_count++; // incrementing parent inodes link count
-
-        //pip->INODE.i_mtime = time(0L);
-
-        pip->dirty = 1; // marking as dirty since a change has been made
-
-        iput(pip);
+        printf("Error, parent (%s) isn't a directory", parent);
+        return -1;
     }
+    if(search(pip, child) != 0)
+    {
+        printf("Error, child (%s) already exists in parent (%s) directory", child, parent);
+        return -1;
+    }
+    kcreat(pip, child); 
+
+    pip->INODE.i_links_count++; // incrementing parent inodes link count
+
+    pip->INODE.i_atime = time(0L);
+
+    pip->dirty = 1; // marking as dirty since a change has been made
+
+    iput(pip);
+    
+    return 0;
     
 }
 
@@ -106,35 +115,19 @@ int enter_name(MINODE *pip, int myino, char *myname)
 {
     INODE *ip = &pip->INODE;
     char buf[BLKSIZE], *cp;
-    int ideal_length, need_length, remain;
+    int ideal_length, need_length, remain, bno;
 
     for(int i = 0; i < 12; i++)
     {
         if(ip->i_block[i] == 0) // no space existing in data block
         {
-            int new_block = balloc(pip->dev);
-            ip->i_blocks++;
-            ip->i_block[i] = new_block;
-            ip->i_size += BLKSIZE;
-
-            get_block(pip->dev, pip->INODE.i_block[i], buf);
-
-            dp = (DIR *)buf;
-
-            dp->inode = myino;
-            dp->rec_len = BLKSIZE;
-            dp->name_len = strlen(myname);
-            strcpy(dp->name, myname);
-
-            put_block(pip->dev, pip->INODE.i_block[i], buf);
             break;
         }
         else
-        {
-            get_block(pip->dev, pip->INODE.i_block[i], buf); //getting parents data block into buf
-
+        { 
+            bno = ip->i_block[i];
+            get_block(pip->dev, pip->INODE.i_block[i], buf); // getting parents data block into buf
             dp = (DIR *) buf;
-
             cp = buf;
 
             while(cp + dp->rec_len < buf + BLKSIZE)
@@ -159,7 +152,27 @@ int enter_name(MINODE *pip, int myino, char *myname)
                 dp->name_len = strlen(myname);
                 strcpy(dp->name, myname);
 
-                put_block(pip->dev, pip->INODE.i_block[i], buf);
+                put_block(dev, bno, buf);
+                return 0;
+            }
+            else
+            {
+                int new_block = balloc(pip->dev);
+                ip->i_blocks++;
+                ip->i_block[i] = new_block;
+                ip->i_size += BLKSIZE;
+
+                get_block(dev, bno, buf);
+
+                dp = (DIR *)buf;
+
+                dp->inode = myino;
+                dp->rec_len = BLKSIZE;
+                dp->name_len = strlen(myname);
+                strcpy(dp->name, myname);
+
+                put_block(dev, bno, buf);
+                return 1;
             }
         }
     }
@@ -202,18 +215,27 @@ int mycreat()
     
     // verifying that parent INODE is a DIR and child does not 
     // already exist in the parent directory
-    if(S_ISDIR(pip->INODE.i_mode) && search(pip, child) == 0)
+
+    if(!S_ISDIR(pip->INODE.i_mode))
     {
-        kcreat(pip, child); 
-
-        pip->INODE.i_links_count++; // incrementing parent inodes link count
-
-        //pip->INODE.i_mtime = time(0L);
-
-        pip->dirty = 1; // marking as dirty since a change has been made
-
-        iput(pip);
+        printf("Error, parent isn't a directory");
+        return -1;
     }
+    if(search(pip, child) != 0)
+    {
+        printf("Error, child already exists in parent directory");
+        return -1;
+    }
+    kcreat(pip, child); 
+
+    pip->INODE.i_links_count++; // incrementing parent inodes link count
+
+    pip->INODE.i_atime = time(0L);
+
+    pip->dirty = 1; // marking as dirty since a change has been made
+
+    iput(pip);
+    return 0;
     
 }
 

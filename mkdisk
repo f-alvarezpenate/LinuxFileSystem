@@ -5,7 +5,7 @@ sudo mke2fs -b 1024 mydisk 1440
 
 sudo mount mydisk /mnt
 
-(cd /mnt; sudo rmdir lost+found;)
+(cd /mnt; sudo rmdir 'lost+found')
 
 sudo umount /mnt
 
