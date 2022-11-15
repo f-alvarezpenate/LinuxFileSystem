@@ -51,9 +51,12 @@ int ls_file(MINODE *mip, char *name)
   printf("%4d ", ip->i_uid); // uid
   printf("%8d ", ip->i_size); // file size
   
-  // print time 
+  // print time in calendar form
+  time_t time = (time_t)ip->i_ctime;
+  strcpy(ftime, ctime(&time));
+
+  // strcpy(ftime, ctime(&ip->i_mtime)); //WRONG implementation for print time in calendar form
   
-  strcpy(ftime, ctime(&ip->i_mtime)); // print time in calendar form
   ftime[strlen(ftime)-1] = 0; // kill \n at end
   printf("%s ", ftime); 
   

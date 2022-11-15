@@ -22,7 +22,7 @@ int mymkdir(char *pathname)
         dev = running->cwd->dev;
         
     }
-    //seg fault here
+    
     char *parent = dirname(temp1);
     char *child = basename(temp2);
 
@@ -46,7 +46,7 @@ int mymkdir(char *pathname)
         printf("Error, child (%s) already exists in parent (%s) directory", child, parent);
         return -1;
     }
-    kcreat(pip, child); 
+    kmkdir(pip, child); 
 
     pip->INODE.i_links_count++; // incrementing parent inodes link count
 
@@ -126,6 +126,7 @@ int enter_name(MINODE *pip, int myino, char *myname)
         else
         { 
             bno = ip->i_block[i];
+            printf("bno: %d\n", bno);
             get_block(pip->dev, pip->INODE.i_block[i], buf); // getting parents data block into buf
             dp = (DIR *) buf;
             cp = buf;
@@ -201,7 +202,7 @@ int mycreat()
         dev = running->cwd->dev;
         
     }
-    //seg fault here
+    
     char *parent = dirname(temp1);
     char *child = basename(temp2);
 

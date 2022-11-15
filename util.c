@@ -194,7 +194,12 @@ int getino(char *pathname) // return ino of pathname
   for (i=0; i<n; i++){
       printf("===========================================\n");
       printf("getino: i=%d name[%d]=%s\n", i, i, name[i]);
- 
+      if(!S_ISDIR(mip->INODE.i_mode))
+      {
+         printf("%s is not a directory\n", name[i]);
+         iput(mip);
+         return 0;
+      }
       ino = search(mip, name[i]);
 
       if (ino==0){
