@@ -39,7 +39,7 @@ int unlink(filename){
     char *child = dirname(temp2);
     int pino = getino(parent);
     MINODE* pmip = iget(dev,ino);
-    //rm_child(pmip,ino,child);
+    rm_child(pmip, child);
     pmip->dirty=1;
     iput(pmip);
     mip->INODE.i_links_count--;
@@ -48,6 +48,15 @@ int unlink(filename){
     else{
         //deallocate all data blocks in inode;
         //deallocate inode;
+        for(int i = 0; i < 12; i++)
+        {
+            if(mip->INODE.i_block[i] == 0)
+            {
+                break;
+            }
+            bdalloc(dev, mip->INODE.i_block[i]);
+        }
+        idalloc(dev, ino);
     }
     iput(mip);
     

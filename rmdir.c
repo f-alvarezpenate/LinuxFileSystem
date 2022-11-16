@@ -82,17 +82,18 @@ int rm_child(MINODE *pmip, char *name){
             temp[dp->name_len] = 0; //kill the end
             if(strcmp(temp, name)==0){
                 //found
-                if(cp == buf && (cp + dp->rec_len == buf + BLKSIZE))
+                int ideal_length = 4 *((8 + dp->name_len + 3)/4);
+                if(dp->rec_len == BLKSIZE)
                 {  //first and only entry
-                    bdalloc(pmip->dev, pmip->INODE.i_block[i]);
+                    bdalloc(pmip->dev, ip->i_block[i]);
                     pmip->INODE.i_size -= BLKSIZE;
                     
-                    while(pmip->INODE.i_block[i+1] && i + 1 < 12){
-                        get_block(pmip->dev, pmip->INODE.i_block[i+1],buf);
-                        put_block(pmip->dev, pmip->INODE.i_block[i],buf);
-                    }
+                    // while(pmip->INODE.i_block[i+1] && i + 1 < 12){
+                    //     get_block(pmip->dev, pmip->INODE.i_block[i+1],buf);
+                    //     put_block(pmip->dev, pmip->INODE.i_block[i],buf);
+                    // }
                 }
-                else if(cp + dp->rec_len == buf + BLKSIZE){
+                else if(dp ->rec_len > ideal_length){
                     //remove last entry
                     prev->rec_len += dp->rec_len;
                     put_block(pmip->dev, pmip->INODE.i_block[i], buf);
@@ -106,12 +107,13 @@ int rm_child(MINODE *pmip, char *name){
                         temp_dp = (DIR *) temp_cp;
                     }
                     temp_dp->rec_len += dp->rec_len;
-                    memcpy(dp,cp,temp_dp->rec_len);
+                    int block_length = (buf + BLKSIZE) - (cp + dp->rec_len);
+                    memmove(cp, cp + dp->rec_len, block_length);
                     put_block(pmip->dev, pmip->INODE.i_block[i], buf);
                 }
 
                 pmip->dirty = 1;
-                iput(pmip);
+                //iput(pmip);
                 return;
             }
             prev = dp;
