@@ -24,7 +24,7 @@ int link(char* old_file,char* new_file){
     iput(pmip);
 }
 
-int unlink(filename){
+int unlink(char* filename){
     int ino = getino(filename);
     MINODE* mip = iget(dev,ino);
     if(!S_ISREG(mip->INODE.i_mode)){
@@ -36,9 +36,9 @@ int unlink(filename){
     strcpy(temp2, filename);  
 
     char *parent = dirname(temp1);
-    char *child = dirname(temp2);
+    char *child = basename(temp2);
     int pino = getino(parent);
-    MINODE* pmip = iget(dev,ino);
+    MINODE* pmip = iget(dev,pino);
     rm_child(pmip, child);
     pmip->dirty=1;
     iput(pmip);

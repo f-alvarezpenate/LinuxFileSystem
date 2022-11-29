@@ -145,7 +145,7 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "link")==0)
         link(pathname, filename);
     else if(strcmp(cmd, "unlink")==0)
-        unlink(filename);
+        unlink(pathname);
   }
 }
 
