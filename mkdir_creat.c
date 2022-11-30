@@ -180,7 +180,7 @@ int enter_name(MINODE *pip, int myino, char *myname)
 
 
 }
-int mycreat()
+int mycreat(char* pathname)
 {
     MINODE *start;
     
@@ -189,7 +189,7 @@ int mycreat()
     strcpy(temp2, pathname);
 
     //sprintf(c, "%c", name[0]);
-    
+    //
     if(pathname[0] == '/') // root
     {
         start = root;

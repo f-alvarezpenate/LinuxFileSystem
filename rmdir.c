@@ -6,7 +6,7 @@ int myrmdir(){
     int ino, pino;
     MINODE* mip, *pmip;
     char *cp, dname[124];
-    DIR *dp;
+    DIR *dp;//
 
     ino = getino(pathname);
     mip = iget(dev,ino);

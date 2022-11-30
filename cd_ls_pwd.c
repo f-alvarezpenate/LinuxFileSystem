@@ -65,8 +65,7 @@ int ls_file(MINODE *mip, char *name)
   
   if ((ip->i_mode & 0xF000) == 0xA000){
     //use readlink()
-    readlink(name,linkname,256);
-    printf(" -> %s", linkname); // print linked name
+    printf(" -> %s", (char *)mip->INODE.i_block);
   }
   printf("\n");
 }

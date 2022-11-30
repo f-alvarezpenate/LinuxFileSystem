@@ -198,14 +198,14 @@ int getino(char *pathname) // return ino of pathname
       {
          printf("%s is not a directory\n", name[i]);
          iput(mip);
-         return 0;
+         return -1;
       }
       ino = search(mip, name[i]);
 
       if (ino==0){
          iput(mip);
          printf("name %s does not exist\n", name[i]);
-         return 0;
+         return -1;
       }
 
       iput(mip);
