@@ -35,6 +35,7 @@ char line[128], cmd[32], pathname[128],filename[128];
 #include "alloc_dalloc.c"
 #include "symlink.c"
 #include "link_unlink.c"
+#include "open_close_lseek"
 int init()
 {
   int i, j;
@@ -65,7 +66,7 @@ int mount_root()
   root = iget(dev, 2);
 }
 
-char *disk = "mydisk";     // change this to YOUR virtual
+char *disk = "disk2";     // change this to YOUR virtual
 
 int main(int argc, char *argv[ ])
 {
@@ -117,7 +118,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -148,6 +149,8 @@ int main(int argc, char *argv[ ])
         unlink(pathname);
     else if(strcmp(cmd, "symlink")==0)
         symlink(pathname, filename);
+    else if(strcmp(cmd, "open")==0)
+        open_file(pathname, filename);    
   }
 }
 

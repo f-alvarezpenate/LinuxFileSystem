@@ -1,0 +1,92 @@
+//#include "type.h"
+int open_file(char* pathname, char* mode)
+{
+    int imode = atoi(mode);
+    char ptemp[BLKSIZE], buf[BLKSIZE];
+    if (imode < 0 || imode >= 4)
+    {
+        printf("open_file error: mode not recognized\n");
+        return -1;
+    }
+    char* pathtemp[128];
+    strcpy(pathtemp, pathname);
+
+    if(pathname[0] == '/')
+    {
+        dev = root->dev;
+    }
+    else
+    {
+        dev = running->cwd->dev;
+    }
+
+    int ino = getino(pathname);
+
+    if(ino == -1) // must creat the file
+    {
+        strcpy(buf, pathname);
+        strcpy(ptemp, dirname(buf));
+        int pino = getino(ptemp);
+        if(pino == -1)
+        {
+            printf("open_file error: couldn't find parent inode\n");
+            return -1;
+        }
+        MINODE *pmip = iget(dev, pino);
+
+        mycreat(pathname);
+        ino = getino(pathname);
+    }
+
+    MINODE *mip = iget(dev, ino);
+
+    if(!S_ISREG(mip->INODE.i_mode))
+    {
+        printf("open_file error: file is not regular\n");
+        return -1;
+    }
+    OFT *oftp = (OFT *)malloc(sizeof(OFT));
+    oftp->mode = mode;
+    oftp->refCount = 1;
+    oftp->minodePtr = mip;
+
+    switch(imode){
+        case 0 : oftp->offset = 0;      // R: offset = 0
+                 break;
+        case 1 : truncate(mip);         // W: truncate file to 0 size
+                 oftp->offset = 0;
+                 break;
+        case 2 : oftp->offset = 0;      // RW: do NOT truncate file
+                 break;
+        case 3 : oftp->offset = mip->INODE.i_size;  // APPEND mode
+                 break;
+        default: printf("invalid mode\n");
+                 return(-1);
+    }
+
+    int result = -1;
+
+    for (int i = 0; i < NFD; i++)
+    {
+        if (running->fd[i] == NULL)
+        {
+            running->fd[i] = oftp;
+            result = i;
+            break;
+        }
+        if(running->fd[i]->minodePtr == mip)
+        {
+            if(imode != 0)
+            {
+                printf("open_file error: file is already open with incompatible mode\n");
+                return -1;
+            }
+        }
+    }
+
+    mip->INODE.i_atime = time(NULL);
+    mip->dirty = 1;
+    iput(mip);
+
+    return result;
+}
