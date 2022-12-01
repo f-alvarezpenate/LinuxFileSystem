@@ -122,7 +122,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -159,6 +159,8 @@ int main(int argc, char *argv[ ])
         close_file();
     else if(strcmp(cmd, "pfd")==0)
         pfd(); 
+    else if(strcmp(cmd, "read")==0)
+        read_file();
   }
 }
 

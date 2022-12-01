@@ -204,7 +204,7 @@ int close_file(){
     return 0;
 }
 
-int lseek(int fd, int position){
+int mylseek(int fd, int position){
    
     OFT *oftp = running->fd[fd];
 
