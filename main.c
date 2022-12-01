@@ -37,6 +37,7 @@ char line[128], cmd[32], pathname[128],filename[128];
 #include "symlink.c"
 #include "link_unlink.c"
 #include "open_close_lseek"
+#include "read_cat"
 int init()
 {
   int i, j;

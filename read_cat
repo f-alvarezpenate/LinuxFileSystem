@@ -1,0 +1,91 @@
+int read_file()
+{
+    int fd = 0, nbytes = 0; 
+    char *buf[BLKSIZE];
+    printf("Enter an fd: ");
+    scanf("%d", &fd);
+    printf("Enter the number of bytes you would like to read");
+    scanf("%d", &nbytes);
+
+    if(running->fd[fd]->mode != 1 && running->fd[fd]->mode != 2)
+    {
+        printf("read_file error: file is not opened for RD or RW\n");
+        return -1;
+    }
+
+    return myread(fd, buf, nbytes);
+}
+
+int myread(int fd, char *buf, int nbytes)
+{
+    int count = 0;
+    int lbk, start, remain, avil, blk;
+    OFT *oftp = running->fd[fd];
+    MINODE *mip = oftp->minodePtr;
+    char buf12[BLKSIZE], buf13[BLKSIZE];
+    avil = mip->INODE.i_size - oftp->offset;
+    int ibuf12[BLKSIZE], ibuf13[BLKSIZE];
+    if(nbytes > avil)
+    {
+        nbytes = avil;
+    }
+
+    while(nbytes && avil)
+    {
+        lbk = oftp->offset / BLKSIZE;
+        start = oftp->offset % BLKSIZE;
+
+        if(lbk < 12) // direct blocks
+        {
+            blk = mip->INODE.i_block[lbk];
+        }
+        else if(lbk >= 12 && lbk < 256 + 12) // indirect blocks                     
+        {
+            get_block(mip->dev, mip->INODE.i_block[12], buf12);
+            blk = ibuf12[lbk - 12];
+        }
+        else // double indirect blocks
+        {
+            get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf12);     // Hint: Mailman’s algorithm
+            int block_size = (BLKSIZE / sizeof(int));
+            lbk = lbk - block_size - 12;
+            blk = ibuf13[lbk / block_size];
+            get_block(mip->dev, blk, ibuf13);
+            blk = ibuf13[lbk % block_size];
+        }
+         /* get the data block into readbuf[BLKSIZE] */
+        char readbuf[BLKSIZE];
+        get_block(mip->dev, blk, readbuf);
+
+        /* copy from startByte to buf[ ], at most remain bytes in this block */
+        char* cq = buf;
+        char *cp = readbuf + start;   
+        remain = BLKSIZE - start;   // number of bytes remain in readbuf[]
+
+        if (nbytes <= remain)
+        {
+            memcpy(cq, cp, nbytes);
+            cq += nbytes;
+            cp += nbytes;
+            count += nbytes;
+            oftp->offset += nbytes;
+            avil -= nbytes;
+            remain -= nbytes;
+            nbytes = 0;
+        }
+        else
+        {
+            memcpy(cq, cp, remain);
+            cq += remain;
+            cp += remain;
+            count += remain;
+            oftp->offset += remain;
+            avil -= remain;
+            nbytes -= remain;
+            remain = 0;
+        }
+        // if one data block is not enough, loop back to OUTER while for more ...
+    }
+    printf("myread: read %d char from file descriptor %d\n", count, fd);  
+    return count;   // count is the actual number of bytes read
+}
