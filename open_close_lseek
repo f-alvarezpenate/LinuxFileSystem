@@ -112,6 +112,62 @@ int truncate(MINODE* mip){
     // double inidirect data blocks. release them all
     //2. update INODE's time field
     //3. set INODE's size to 0 and mark Minode[] dirty
+
+    char buf12[BLKSIZE], buf13[BLKSIZE]; 
+    INODE *ip = &mip->INODE;
+
+    for (int i = 0; i < 12; i++) // 12 first direct blocks
+    {
+        if(ip->i_block[i] == 0)
+        {
+            break;
+        }
+
+        bdalloc(dev, ip->i_block[i]);
+        ip->i_block[i] = 0;
+    }
+
+    if(ip->i_block[12] != NULL) // first indirect blocks
+    {
+        get_block(dev, ip->i_block[12], buf12);
+        int* buf_ref12 = (int *) buf12;
+
+        for (int i = 0; i < BLKSIZE / sizeof(int); i++)
+        {
+            if(buf_ref12[i] == 0)
+            {
+                break;
+            }
+            bdalloc(dev, buf_ref12[i]);
+            buf_ref12[i] = 0;
+        }
+        bdalloc(dev, ip->i_block[12]);
+        ip->i_block[12] = 0;
+    }
+
+    if(ip->i_block[13] != NULL) // doubly indirect blocks need to be dealt with
+    {
+        get_block(dev, ip->i_block[13], buf13);
+        int* buf_ref13 = (int *)buf13;
+        for(int i = 0; i < BLKSIZE / sizeof(int); i++)
+        {
+            if(buf_ref13[i] == 0)
+            {
+                break;
+            }
+            bdalloc(dev, buf_ref13[i]);
+            buf_ref13[i] = 0;
+        }
+
+        bdalloc(dev, ip->i_block[13]);
+        ip->i_block[13] = 0;
+    }
+
+    mip->INODE.i_blocks = 0;
+    mip->INODE.i_size = 0;
+    mip->dirty = 1;
+    iput(mip);
+
 }
 
 int close_file(){
