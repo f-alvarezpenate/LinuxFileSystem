@@ -204,13 +204,25 @@ int close_file(){
     return 0;
 }
 
-// int lseek(int fd, int position){
-//     //from fd, find the oft entry
+int lseek(int fd, int position){
+   
+    OFT *oftp = running->fd[fd];
 
-//     //change oft entrys offset to position but make sure NOT to over run either end of the file
+    if(oftp->refCount > 0)
+    {
+        if (position >= 0 && position <= oftp->minodePtr->INODE.i_size)
+        {
+            oftp->offset = position;
+            return position;
+        }
+        else
+        {
+            printf("lseek error: position '%d' is out of bounds\n");
+            return -1;
+        }
+    }
 
-//     //return originalposition
-// }
+}
 
 int pfd(){
     /*displays the currently opened files as follows
