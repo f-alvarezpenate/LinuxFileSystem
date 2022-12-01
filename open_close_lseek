@@ -170,7 +170,7 @@ int truncate(MINODE* mip){
 
 }
 
-int close_file(){
+int close_file(char* pathname){
     if (!pathname){
         printf("close_file error: no file name given");
     }

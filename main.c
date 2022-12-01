@@ -72,6 +72,7 @@ char *disk = "disk2";     // change this to YOUR virtual
 
 int main(int argc, char *argv[ ])
 {
+  
   int ino;
   char buf[BLKSIZE];
 
@@ -122,7 +123,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|cat|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -156,11 +157,13 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "open")==0)
         open_file(pathname, filename);  
     else if(strcmp(cmd, "close")==0)
-        close_file();
+        close_file(pathname);
     else if(strcmp(cmd, "pfd")==0)
         pfd(); 
     else if(strcmp(cmd, "read")==0)
         read_file();
+    else if(strcmp(cmd, "cat")==0)
+        cat_file(pathname);
   }
 }
 

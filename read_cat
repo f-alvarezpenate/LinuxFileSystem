@@ -4,10 +4,16 @@ int read_file()
     char *buf[BLKSIZE];
     printf("Enter an fd: ");
     scanf("%d", &fd);
-    printf("Enter the number of bytes you would like to read");
+    printf("Enter the number of bytes you would like to read: ");
     scanf("%d", &nbytes);
 
-    if(running->fd[fd]->mode != 1 && running->fd[fd]->mode != 2)
+    if(fd < 0 || fd > NFD-1)
+    {
+        printf("read_file error: invlaid file descriptor\n");
+        return -1;
+    }
+
+    if(running->fd[fd]->mode != 0 && running->fd[fd]->mode != 2)
     {
         printf("read_file error: file is not opened for RD or RW\n");
         return -1;
@@ -88,4 +94,36 @@ int myread(int fd, char *buf, int nbytes)
     }
     printf("myread: read %d char from file descriptor %d\n", count, fd);  
     return count;   // count is the actual number of bytes read
+}
+
+int cat_file(char* filename)
+{
+    char mybuf[1024], dummy = 0;
+    int n;
+
+    int fd = open_file(filename, 0);
+    if (fd >= 0){
+        while(n = myread(fd, mybuf, BLKSIZE))
+        {
+            mybuf[n] = 0;
+            char* cp = mybuf;
+            while(cp != '\0') // means we've reached the end
+            {
+                if(*cp == '\n') // handles new lines
+                {
+                    printf("\n");
+                }
+                else
+                {
+                    printf("%c", *cp);
+                }
+                cp++;
+            }
+        }
+    }
+
+    close_file(fd);
+    return 0;
+    
+
 }
