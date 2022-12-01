@@ -46,7 +46,7 @@ int open_file(char* pathname, char* mode)
         return -1;
     }
     OFT *oftp = (OFT *)malloc(sizeof(OFT));
-    oftp->mode = mode;
+    oftp->mode = imode;
     oftp->refCount = 1;
     oftp->minodePtr = mip;
 
@@ -176,26 +176,24 @@ int pfd(){
         
             switch(oftp->mode){
                 case 0: 
-                    printf("    READ    ");
+                    printf("   READ");
                     break;
                 case 1:
-                    printf("    WRITE   ");
+                    printf("   WRITE");
                     break;
                 case 2:
-                    printf("    READ/WRITE  ");
+                    printf("   READ/WRITE");
                     break;
                 case 3:
-                    printf("    APPEND  ");
-                    break;
-                default:
-                    printf("    --  ");
+                    printf("   APPEND");
                     break;
             }
-            printf("    %6d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
+            printf("     %6d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
         }
         else{
             break;
         }
+        printf("-------------------------------------------\n");
     }
     return 0;
 }
