@@ -92,7 +92,7 @@ int myread(int fd, char *buf, int nbytes)
         }
         // if one data block is not enough, loop back to OUTER while for more ...
     }
-    printf("myread: read %d char from file descriptor %d\n", count, fd);  
+    //printf("myread: read %d char from file descriptor %d\n", count, fd);  
     return count;   // count is the actual number of bytes read
 }
 
@@ -100,14 +100,15 @@ int cat_file(char* filename)
 {
     char mybuf[1024], dummy = 0;
     int n;
-
-    int fd = open_file(filename, 0);
+    char mode[BLKSIZE];
+    strcpy(mode, "0");
+    int fd = open_file(filename, mode);
     if (fd >= 0){
         while(n = myread(fd, mybuf, BLKSIZE))
         {
             mybuf[n] = 0;
             char* cp = mybuf;
-            while(cp != '\0') // means we've reached the end
+            while(*cp != '\0') // means we've reached the end
             {
                 if(*cp == '\n') // handles new lines
                 {
@@ -121,8 +122,9 @@ int cat_file(char* filename)
             }
         }
     }
-
-    close_file(fd);
+    printf("\n\n");
+    sprintf(mode, fd);
+    close_file(mode);
     return 0;
     
 
