@@ -19,7 +19,7 @@ extern MINODE *iget();
 MINODE minode[NMINODE];
 MINODE *root;
 PROC   proc[NPROC], *running;
-//OFT oft[NOFT];
+OFT oft[NOFT];
 
 char gpath[128]; // global for tokenized components
 char *name[64];  // assume at most 64 components in pathname
@@ -121,7 +121,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -153,7 +153,11 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "symlink")==0)
         symlink(pathname, filename);
     else if(strcmp(cmd, "open")==0)
-        open_file(pathname, filename);    
+        open_file(pathname, filename);  
+    else if(strcmp(cmd, "close")==0)
+        close_file();
+    else if(strcmp(cmd, "pfd")==0)
+        pfd(); 
   }
 }
 

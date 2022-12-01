@@ -83,22 +83,22 @@ int open_file(char* pathname, char* mode)
             }
         }
     }
-    // OFT *temp;
-    // //add file to oft array
-    // for (int i = 0; i < NOFT; i++){
-    //     temp = &oft[i];
-    //     if (temp->refCount==0){
-    //         temp->mode = oftp->mode;
-    //         temp->minodePtr = oftp->minodePtr;
-    //         temp->refCount = oftp->refCount;
-    //         break;
-    //     }
-    //     else if (i == NOFT - 1){
-    //         printf("open_file error: Too many files opened at once.\n");
-    //         iput(mip);
-    //         return;
-    //     }
-    // }
+    OFT *temp;
+    //add file to oft array
+    for (int i = 0; i < NOFT; i++){
+        temp = &oft[i];
+        if (temp->refCount==0){
+            temp->mode = oftp->mode;
+            temp->minodePtr = oftp->minodePtr;
+            temp->refCount = oftp->refCount;
+            break;
+        }
+        else if (i == NOFT - 1){
+            printf("open_file error: Too many files opened at once.\n");
+            iput(mip);
+            return;
+        }
+    }
     mip->INODE.i_atime = time(NULL);
     mip->dirty = 1;
     iput(mip);
@@ -114,42 +114,39 @@ int truncate(MINODE* mip){
     //3. set INODE's size to 0 and mark Minode[] dirty
 }
 
-// int close_file(){
-//     if (!pathname){
-//         printf("close_file error: no file name given");
-//     }
-//     int fd = atoi(pathname);
-//     int i;
-//     OFT *oftp;
-//     MINODE* mip;
-//     //1. verify fd is within range.
+int close_file(){
+    if (!pathname){
+        printf("close_file error: no file name given");
+    }
+    int fd = atoi(pathname);
+    int i;
+    OFT *oftp;
+    MINODE* mip;
+    //1. verify fd is within range.
     
-//     if (fd<0 || fd >= NFD){
-//         printf("close_file error: not in range.\n");
-//     }
-//     //2. verify running->fd[fd] is pointing at OFT entry
-//     for (i=0; i < NOFT; i++){
-//         oftp = &oft[i]; //oft = openfiletable. 
-//         //I can find where the struct itself is defined in KCs code but i dont think we have an actual variable 
-//         //also i think open_file is supposed to add every file it opens to this list when we actually create it as
-//         //a global in main
-//         if (oftp->minodePtr == running->fd[fd]->minodePtr) break;
-//         if(i==NOFT-1){
-//             printf("close_file error: file not pointing at OFT entry.\n");
-//         }
-//     }
-//     //3. The following code segments should be fairly obvious:
-//     oftp = running->fd[fd];
-//     running->fd[fd] = 0;
-//     oftp->refCount--;
-//     if(oftp->refCount>0) return 0;
+    if (fd<0 || fd >= NFD){
+        printf("close_file error: not in range.\n");
+    }
+    //2. verify running->fd[fd] is pointing at OFT entry
+    for (i=0; i < NOFT; i++){
+        oftp = &oft[i]; //oft = openfiletable. 
+        if (oftp->minodePtr == running->fd[fd]->minodePtr) break;
+        if(i==NOFT-1){
+            printf("close_file error: file not pointing at OFT entry.\n");
+        }
+    }
+    //3. The following code segments should be fairly obvious:
+    oftp = running->fd[fd];
+    running->fd[fd] = 0;
+    oftp->refCount--;
+    if(oftp->refCount>0) return 0;
 
-//     //last user of this OFT entry ==> dispose of the Minode[]
-//     mip = oftp->minodePtr;
-//     iput(mip);
+    //last user of this OFT entry ==> dispose of the Minode[]
+    mip = oftp->minodePtr;
+    iput(mip);
 
-//     return 0;
-// }
+    return 0;
+}
 
 // int lseek(int fd, int position){
 //     //from fd, find the oft entry
@@ -159,46 +156,49 @@ int truncate(MINODE* mip){
 //     //return originalposition
 // }
 
-// int pfd(){
-//     /*displays the currently opened files as follows
-//     fd      mode        offset      INODE
-//     --      ----        ------      -----
-//     0       READ        1234        [dev,ino]
-//     1       WRITE       0           [dev,ino]
-//     -----------------------------------------
-//     to help users know what files have been opened
-//     */
-//     OFT *oftp;
-//     printf("fd      mode        offset      INODE\n");
-//     printf("--      ----        ------      -----\n");
+int pfd(){
+    /*displays the currently opened files as follows
+    fd      mode        offset      INODE
+    --      ----        ------      -----
+    0       READ        1234        [dev,ino]
+    1       WRITE       0           [dev,ino]
+    -----------------------------------------
+    to help users know what files have been opened
+    */
+    OFT *oftp;
+    printf("fd      mode        offset      INODE\n");
+    printf("--      ----        ------      -----\n");
 
-//     for(int i=0; i < NOFT; i++){
-//         oftp = &oft[i];
-//         if(oftp->refCount != 0){
-//             printf("%d    ", i);
+    for(int i=0; i < NOFT; i++){
+        oftp = &oft[i];
+        if(oftp->refCount != 0){
+            printf("%d    ", i);
         
-//             switch(oftp->mode){
-//                 case 0: 
-//                     printf("READ");
-//                     break;
-//                 case 1:
-//                     printf("WRITE");
-//                     break;
-//                 case 2:
-//                     printf("READ/WRITE");
-//                     break;
-//                 case 3:
-//                     printf("APPEND");
-//                     break;
-//             }
-//             printf("%6d     [%2d,%5d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
-//         }
-//         else{
-//             break;
-//         }
-//     }
-//     return 0;
-// }
+            switch(oftp->mode){
+                case 0: 
+                    printf("    READ    ");
+                    break;
+                case 1:
+                    printf("    WRITE   ");
+                    break;
+                case 2:
+                    printf("    READ/WRITE  ");
+                    break;
+                case 3:
+                    printf("    APPEND  ");
+                    break;
+                default:
+                    printf("    --  ");
+                    break;
+            }
+            printf("    %6d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
+        }
+        else{
+            break;
+        }
+    }
+    return 0;
+}
 
 // dup(int fd){
 //     //verify fd is an opened descriptor
