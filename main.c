@@ -19,6 +19,7 @@ extern MINODE *iget();
 MINODE minode[NMINODE];
 MINODE *root;
 PROC   proc[NPROC], *running;
+//OFT oft[NOFT];
 
 char gpath[128]; // global for tokenized components
 char *name[64];  // assume at most 64 components in pathname
@@ -113,8 +114,10 @@ int main(int argc, char *argv[ ])
 
   // WRTIE code here to create P1 as a USER process
   printf("creating P1 as a USER process \n");
-  running = &proc[1];
-  running->cwd = iget(dev, 2);
+  proc[1].pid = 2;
+  proc[1].uid = 1;
+  proc[1].cwd = 0;
+
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
