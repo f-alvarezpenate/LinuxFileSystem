@@ -38,6 +38,7 @@ char line[128], cmd[32], pathname[128],filename[128];
 #include "link_unlink.c"
 #include "open_close_lseek"
 #include "read_cat"
+#include "write_cp"
 int init()
 {
   int i, j;
@@ -123,7 +124,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|cat|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|cat|write|cp|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -164,6 +165,11 @@ int main(int argc, char *argv[ ])
         read_file();
     else if(strcmp(cmd, "cat")==0)
         cat_file(pathname);
+    else if(strcmp(cmd, "write")==0)
+        write_file();
+    else if(strcmp(cmd, "cp")==0)
+        cp_file();
+    
   }
 }
 

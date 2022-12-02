@@ -28,7 +28,7 @@ int myread(int fd, char *buf, int nbytes)
     int lbk, start, remain, avil, blk;
     OFT *oftp = running->fd[fd];
     MINODE *mip = oftp->minodePtr;
-    char buf12[BLKSIZE], buf13[BLKSIZE];
+    char *buf12, *buf13;
     avil = mip->INODE.i_size - oftp->offset;
     int ibuf12[BLKSIZE], ibuf13[BLKSIZE];
     if(nbytes > avil)
@@ -124,7 +124,7 @@ int cat_file(char* filename)
     }
     printf("\n\n");
     sprintf(mode, fd);
-    close_file(mode);
+    close_file(filename);
     return 0;
     
 

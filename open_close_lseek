@@ -85,12 +85,13 @@ int open_file(char* pathname, char* mode)
     }
     OFT *temp;
     //add file to oft array
-    for (int i = 0; i < NOFT; i++){
+    int i;
+    for ( i = 0; i < NOFT; i++){
         temp = &oft[i];
-        if (temp->refCount==0){
-            temp->mode = oftp->mode;
-            temp->minodePtr = oftp->minodePtr;
-            temp->refCount = oftp->refCount;
+        if (oft[i].refCount==0){
+            oft[i].mode = oftp->mode;
+            oft[i].minodePtr = oftp->minodePtr;
+            oft[i].refCount = 1;
             break;
         }
         else if (i == NOFT - 1){
@@ -99,6 +100,7 @@ int open_file(char* pathname, char* mode)
             return;
         }
     }
+    running->fd[fd] = temp;
     mip->INODE.i_atime = time(NULL);
     mip->dirty = 1;
     iput(mip);
@@ -170,13 +172,13 @@ int truncate(MINODE* mip){
 
 }
 
-int close_file(char* pathname){
+int close_file(char* pathname){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault
     if (!pathname){
         printf("close_file error: no file name given");
     }
     int fd = atoi(pathname);
     int i;
-    OFT *oftp;
+    OFT *oftp, *temp;
     MINODE* mip;
     //1. verify fd is within range.
     
@@ -186,17 +188,22 @@ int close_file(char* pathname){
     //2. verify running->fd[fd] is pointing at OFT entry
     for (i=0; i < NOFT; i++){
         oftp = &oft[i]; //oft = openfiletable. 
-        if (oftp->minodePtr == running->fd[fd]->minodePtr) break;
-        if(i==NOFT-1){
-            printf("close_file error: file not pointing at OFT entry.\n");
+        if (oftp->minodePtr == running->fd[fd]->minodePtr){
+            oftp->refCount--;
+            break;
         }
+        //check if no file was found by using ith index
+        else if(i==NOFT-1){
+                printf("close_file error: file not pointing at OFT entry.\n");
+            }
     }
+    
     //3. The following code segments should be fairly obvious:
     oftp = running->fd[fd];
-    running->fd[fd] = 0;
     oftp->refCount--;
-    if(oftp->refCount>0) return 0;
-
+    running->fd[fd] = 0;
+    if(oftp->refCount>0) return 0;//statement below is not printing. for some reason it thinks that its greater than 0
+    printf("REFCOUNT NOT > ZERO LIKE IT SHOULD BE\n");
     //last user of this OFT entry ==> dispose of the Minode[]
     mip = oftp->minodePtr;
     iput(mip);
@@ -233,13 +240,12 @@ int pfd(){
     -----------------------------------------
     to help users know what files have been opened
     */
-    OFT *oftp;
     printf("fd      mode        offset      INODE\n");
     printf("--      ----        ------      -----\n");
-
+    OFT* oftp;
     for(int i=0; i < NOFT; i++){
         oftp = &oft[i];
-        if(oftp->refCount != 0){
+        if(oftp->refCount > 0){
             printf("%d    ", i);
         
             switch(oftp->mode){
@@ -256,13 +262,14 @@ int pfd(){
                     printf("   APPEND");
                     break;
             }
-            printf("     %6d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
+            printf("         %d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
+            //printf("refcount: \n", oftp->refCount); refcount for each file is just blank for some reason
         }
-        else{
-            break;
-        }
-        printf("-------------------------------------------\n");
+        
+       
+        
     }
+     printf("-------------------------------------------\n");
     return 0;
 }
 
