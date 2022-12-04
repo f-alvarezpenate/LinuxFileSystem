@@ -168,7 +168,7 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "write")==0)
         write_file();
     else if(strcmp(cmd, "cp")==0)
-        cp_file();
+        cp_file(pathname, filename);
     
   }
 }

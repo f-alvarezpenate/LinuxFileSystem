@@ -100,12 +100,18 @@ int cat_file(char* filename)
 {
     char mybuf[1024], dummy = 0;
     int n;
+    int total = 0;
     char mode[BLKSIZE];
     strcpy(mode, "0");
+    printf("Mode: %s", mode);
     int fd = open_file(filename, mode);
+    printf("\n==================================");
+    printf("\nSTART------------OF------------CAT\n");
+    printf("==================================\n\n");
     if (fd >= 0){
         while(n = myread(fd, mybuf, BLKSIZE))
-        {
+        {   
+            total += n;
             mybuf[n] = 0;
             char* cp = mybuf;
             while(*cp != '\0') // means we've reached the end
@@ -123,6 +129,7 @@ int cat_file(char* filename)
         }
     }
     printf("\n\n");
+    printf("cat read %d chars from fd: %d\n", total, fd);
     sprintf(mode, fd);
     close_file(fd);
     return 0;

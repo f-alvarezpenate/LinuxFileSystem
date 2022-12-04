@@ -180,6 +180,7 @@ int truncate(MINODE* mip){
 int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault
     
     printf("INSIDE CLOSE: fd=%d\n", fd);
+    printf("FD: %d\n", fd);
     int i;
     OFT *oftp, *temp;
     MINODE* mip;
@@ -201,12 +202,12 @@ int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Clos
                 return -1;
             }
     }
-    printf("refcount = %d\n", oftp->refCount);
+    //printf("refcount = %d\n", oftp->refCount);
     //3. The following code segments should be fairly obvious:
     oftp = running->fd[fd];
-    printf("fd[fd]: refcount = %d\n", oftp->refCount); // refcount is unaffected by line 198 decrease since this refers to running->fd[fd] and not just the array keeping track
+    //printf("fd[fd]: refcount = %d\n", oftp->refCount); // refcount is unaffected by line 198 decrease since this refers to running->fd[fd] and not just the array keeping track
     oftp->refCount--; //                                  so we decrease it again in this line 
-    printf("refcount-- = %d\n", oftp->refCount);
+    //printf("refcount-- = %d\n", oftp->refCount);
 
     running->fd[fd] = 0;
     if(oftp->refCount>0) return 0;//statement below is not printing. for some reason it thinks that its greater than 0
