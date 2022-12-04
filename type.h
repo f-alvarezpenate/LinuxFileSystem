@@ -30,7 +30,6 @@ DIR   *dp;
 #define NPROC       2
 
 // file system table sizes // needed for level 2
-#define NMINODE 100
 #define NMTABLE 10
 #define NPROC 2
 #define NFD 10

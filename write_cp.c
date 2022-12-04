@@ -139,7 +139,7 @@ int cp_file(){
         write(gd, buf, n);
     }
     close_file(fd);
-    clsoe_file(gd);
+    close_file(gd);
 }
 
 /*

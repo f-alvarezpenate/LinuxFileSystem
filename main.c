@@ -36,9 +36,9 @@ char line[128], cmd[32], pathname[128],filename[128];
 #include "alloc_dalloc.c"
 #include "symlink.c"
 #include "link_unlink.c"
-#include "open_close_lseek"
-#include "read_cat"
-#include "write_cp"
+#include "open_close_lseek.c"
+#include "read_cat.c"
+#include "write_cp.c"
 int init()
 {
   int i, j;
