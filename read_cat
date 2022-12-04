@@ -124,7 +124,7 @@ int cat_file(char* filename)
     }
     printf("\n\n");
     sprintf(mode, fd);
-    close_file(filename);
+    close_file(fd);
     return 0;
     
 

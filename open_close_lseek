@@ -42,6 +42,7 @@ int open_file(char* pathname, char* mode)
 
     if(!S_ISREG(mip->INODE.i_mode))
     {
+        iput(mip);
         printf("open_file error: file is not regular\n");
         return -1;
     }
@@ -49,32 +50,32 @@ int open_file(char* pathname, char* mode)
     oftp->mode = imode;
     oftp->refCount = 1;
     oftp->minodePtr = mip;
-
+    int offset;
     switch(imode){
-        case 0 : oftp->offset = 0;      // R: offset = 0
+        case 0 : offset = 0;      // R: offset = 0
                  break;
         case 1 : truncate(mip);         // W: truncate file to 0 size
-                 oftp->offset = 0;
+                 offset = 0;
                  break;
-        case 2 : oftp->offset = 0;      // RW: do NOT truncate file
+        case 2 : offset = 0;      // RW: do NOT truncate file
                  break;
-        case 3 : oftp->offset = mip->INODE.i_size;  // APPEND mode
+        case 3 : offset = mip->INODE.i_size;  // APPEND mode
                  break;
         default: printf("invalid mode\n");
                  return(-1);
     }
 
     int result = -1;
-
-    for (int i = 0; i < NFD; i++)
+    int i;
+    for (i = 0; i < NFD; i++)
     {
         if (running->fd[i] == NULL)
         {
-            running->fd[i] = oftp;
+            
             result = i;
             break;
         }
-        if(running->fd[i]->minodePtr == mip)
+        else if(running->fd[i]->minodePtr == mip)
         {
             if(imode != 0)
             {
@@ -82,16 +83,20 @@ int open_file(char* pathname, char* mode)
                 return -1;
             }
         }
+        else if(fd==NFD-1){
+            printf("open_file error: fd is full.\n");
+            iput(mip);
+            return -1;
+        }
     }
-    OFT *temp;
     //add file to oft array
-    int i;
-    for ( i = 0; i < NOFT; i++){
-        temp = &oft[i];
-        if (oft[i].refCount==0){
-            oft[i].mode = oftp->mode;
-            oft[i].minodePtr = oftp->minodePtr;
-            oft[i].refCount = 1;
+    int j;
+    for (j = 0; j < NOFT; j++){
+        if (oft[j].refCount==0){
+            oft[j].mode = imode;
+            oft[j].minodePtr = mip;
+            oft[j].refCount++;
+            running->fd[i] = oftp;
             break;
         }
         else if (i == NOFT - 1){
@@ -100,10 +105,10 @@ int open_file(char* pathname, char* mode)
             return;
         }
     }
-    running->fd[fd] = temp;
-    mip->INODE.i_atime = time(NULL);
+    printf("INSIDE OPEN(), OUTSIDE OF LOOP. REFCOUNT = %d\n", oft[i].refCount);
+    mip->INODE.i_atime = time(0L);
     mip->dirty = 1;
-    iput(mip);
+    // iput(mip); //kc online thingy said not to put() here bc its already done in close
 
     return result;
 }
@@ -172,11 +177,9 @@ int truncate(MINODE* mip){
 
 }
 
-int close_file(char* pathname){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault
-    if (!pathname){
-        printf("close_file error: no file name given");
-    }
-    int fd = atoi(pathname);
+int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault
+    
+    printf("INSIDE CLOSE: fd=%d\n", fd);
     int i;
     OFT *oftp, *temp;
     MINODE* mip;
@@ -189,26 +192,42 @@ int close_file(char* pathname){ //PROBLEM: if you open 2 files and close 1 of th
     for (i=0; i < NOFT; i++){
         oftp = &oft[i]; //oft = openfiletable. 
         if (oftp->minodePtr == running->fd[fd]->minodePtr){
-            oftp->refCount--;
+            oftp->refCount--; // do this to update openfiletable global var
             break;
         }
         //check if no file was found by using ith index
         else if(i==NOFT-1){
                 printf("close_file error: file not pointing at OFT entry.\n");
+                return -1;
             }
     }
-    
+    printf("refcount = %d\n", oftp->refCount);
     //3. The following code segments should be fairly obvious:
     oftp = running->fd[fd];
-    oftp->refCount--;
+    printf("fd[fd]: refcount = %d\n", oftp->refCount); // refcount is unaffected by line 198 decrease since this refers to running->fd[fd] and not just the array keeping track
+    oftp->refCount--; //                                  so we decrease it again in this line 
+    printf("refcount-- = %d\n", oftp->refCount);
+
     running->fd[fd] = 0;
     if(oftp->refCount>0) return 0;//statement below is not printing. for some reason it thinks that its greater than 0
-    printf("REFCOUNT NOT > ZERO LIKE IT SHOULD BE\n");
+    //printf("REFCOUNT NOT > ZERO LIKE IT SHOULD BE\n");
     //last user of this OFT entry ==> dispose of the Minode[]
     mip = oftp->minodePtr;
     iput(mip);
 
     return 0;
+}
+
+int terminal_close_file(char *pathname){
+    //if user wants to clse file from terminal using an fd as input we need this function bc terminal text is type char*
+    if(!pathname){
+        printf("close_file error: no file name given");
+        return -1;
+    }
+    else{
+        close_file(atoi(pathname));
+        return 0;
+    }
 }
 
 int mylseek(int fd, int position){
@@ -242,13 +261,10 @@ int pfd(){
     */
     printf("fd      mode        offset      INODE\n");
     printf("--      ----        ------      -----\n");
-    OFT* oftp;
     for(int i=0; i < NOFT; i++){
-        oftp = &oft[i];
-        if(oftp->refCount > 0){
+        if(oft[i].refCount > 0){
             printf("%d    ", i);
-        
-            switch(oftp->mode){
+            switch(oft[i].mode){
                 case 0: 
                     printf("   READ");
                     break;
@@ -262,8 +278,8 @@ int pfd(){
                     printf("   APPEND");
                     break;
             }
-            printf("         %d         [%d,%d]\n", oftp->offset, oftp->minodePtr->dev, oftp->minodePtr->ino);
-            //printf("refcount: \n", oftp->refCount); refcount for each file is just blank for some reason
+            printf("         %d         [%d,%d]\n", oft[i].offset, oft[i].minodePtr->dev, oft[i].minodePtr->ino);
+            printf("refcount: %d\n", oft[i].refCount); //refcount for each file is just blank for some reason
         }
         
        

@@ -158,7 +158,7 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "open")==0)
         open_file(pathname, filename);  
     else if(strcmp(cmd, "close")==0)
-        close_file(pathname);
+        terminal_close_file(pathname);
     else if(strcmp(cmd, "pfd")==0)
         pfd(); 
     else if(strcmp(cmd, "read")==0)
