@@ -19,10 +19,12 @@ int write_file(){
         printf("write_file error: not in range.\n");
     }
     //2. verify running->fd[fd] is pointing at OFT entry
+    int found;
     for (int i=0; i < NOFT; i++){
         oftp = &oft[i]; //oft = openfiletable. 
         if (oftp->minodePtr == running->fd[fd]->minodePtr){
             if(oftp->mode == 1 || oftp->mode == 2 || oftp->mode == 3){
+                found = 1;
                 break;
             }
             else{
@@ -31,25 +33,30 @@ int write_file(){
             
         }
         //check if no file was found by using ith index
-        if(i==NOFT-1){
-                printf("write_file error: file not pointing at OFT entry.\n");
-            }
     }
-
+    if(!found){
+        printf("write_file error: file not pointing at OFT entry.\n");
+        return -1;
+    }
     return mywrite(fd, tempbuf, nbytes);
 }
 
 int mywrite(int fd, char buf[], int nbytes){
-    int lbk = -1, startByte = -1, blk = -1, remain = -1;
-    char buf12[BLKSIZE], buf13[BLKSIZE], wbuf[BLKSIZE];
-    char *cq = buf; 
+    int count = 0;
+    int lbk, start, remain, avil, blk;
     OFT *oftp = running->fd[fd];
     MINODE *mip = oftp->minodePtr;
+    char buf12[BLKSIZE], buf13[BLKSIZE];
+    char* cq = buf;
+    avil = mip->INODE.i_size - oftp->offset;
+    int intbuf12[BLKSIZE];
+    int intbuf13[BLKSIZE];
+    char wbuf[BLKSIZE];
     
     while (nbytes > 0){
         //compute logical block (lbk) and the startByte in that lbk:
         lbk = oftp->offset / BLKSIZE;
-        startByte = oftp->offset % BLKSIZE;
+        start = oftp->offset % BLKSIZE;
         //only showed how to write DIRECT data blocks, we have to figure out how to 
         // write indirect data blocks and double indirect data blocks
     
@@ -60,32 +67,36 @@ int mywrite(int fd, char buf[], int nbytes){
             }
             blk = mip->INODE.i_block[lbk]; // blk should be a disk block now
         }
-        else if(lbk>= 12 && lbk < 256+12){ // inderect blocks
+        else if(lbk>= 12 && lbk < 256+12){ // indirect blocks       // not working for large file. SOLVED
             //HELP INFO:
             if (mip->INODE.i_block[12] == 0){
-                //allocate a block for it;
+                //allocate a block for it 
                 mip->INODE.i_block[12] = balloc(mip->dev);
                 //zero out the block on disk;
                 get_block(mip->dev, mip->INODE.i_block[12], buf12);
-                for (int i = 0; i < BLKSIZE; i++)
+                
+                for (int i = 0; i < 256; i++)
                     buf12[i] = 0;
                 put_block(mip->dev, mip->INODE.i_block[12], buf12);
                 mip->INODE.i_blocks++;
             }
             //get i_block[12] into an int ibuf[256];
-            get_block(mip->dev, mip->INODE.i_block[12], buf12);
-            blk = buf12[lbk-12];
+            char tempbuf[BLKSIZE];
+            lbk = lbk - 12;
+            get_block(mip->dev, mip->INODE.i_block[12], tempbuf);
+            blk = tempbuf[lbk];                                          
             if (blk==0){
                 //allocate a disk block;
                 blk = balloc(mip->dev);
-                buf12[lbk - 12] = blk;
+                tempbuf[lbk - 12] = blk;
                 mip->INODE.i_blocks++;
+                put_block(mip->dev, mip->INODE.i_block[12], tempbuf);
                 //record it in i_block[12];
             }
-            put_block(mip->dev, mip->INODE.i_block[12], buf12);
         }
-        else{   //double inderect blocks
-            int ibuf[256], dbuf[256];
+        else{   //double inderect blocks    // not working for huge file 
+            int ibuf[BLKSIZE], dbuf[BLKSIZE];
+            lbk = lbk - 268;
             if(mip->INODE.i_block[13] == 0)
             {
                 mip->INODE.i_block[13] = balloc(mip->dev);
@@ -99,39 +110,63 @@ int mywrite(int fd, char buf[], int nbytes){
                 put_block(mip->dev, mip->INODE.i_block[13], buf13);
                 mip->INODE.i_blocks++;
             }
-            get_block(mip->dev, mip->INODE.i_block[13], ibuf);
-            blk = ibuf[(lbk - 256 - 12) / 256];
-            if(blk == 0)
-            {
-                blk = balloc(mip->dev);
-                ibuf[(lbk - 256 - 12) % 256] = blk;
-            }
-            put_block(mip->dev, mip->INODE.i_block[13], ibuf);
-            mip->INODE.i_blocks++;
+            char tempbuf2[BLKSIZE];
 
-            get_block(mip->dev, ibuf[(lbk - 256 - 12) / 256], dbuf);
-            blk = dbuf[(lbk - 256 - 12) % 256];
-            if(blk == 0)
+            get_block(mip->dev, mip->INODE.i_block[13], tempbuf2);
+            int dlbk = tempbuf2[lbk/256];
+
+            if(dlbk == 0)
+            {
+                dlbk = balloc(mip->dev);
+                tempbuf2[lbk/256] = dlbk;
+                get_block(mip->dev, dlbk, intbuf13);
+
+                for (int i = 0; i < BLKSIZE; i++)
+                {
+                    intbuf13[i] = 0;
+                }
+                put_block(mip->dev, dlbk, intbuf13);
+                mip->INODE.i_blocks++;
+                put_block(mip->dev, mip->INODE.i_block[13], tempbuf2);
+            }
+
+            get_block(mip->dev, dlbk, tempbuf2);
+            
+            if(tempbuf2[lbk % 256] == 0)
             {
                 blk = balloc(mip->dev);
-                dbuf[(lbk - 256 - 12) % 256] = blk;
+                tempbuf2[lbk % 256] = blk;
+                mip->INODE.i_blocks++;
+                put_block(mip->dev, dlbk, tempbuf2);
             }
-            mip->INODE.i_blocks++;
-            put_block(mip->dev, ibuf[(lbk - 256 -12) / 256], dbuf);
+            
         }
         // all cases come to here : write to the data block
         get_block(mip->dev, blk, wbuf); //read disk block into wbuf[]
-        char *cp = wbuf + startByte; //cp points at startByte in wbuf[]
-        remain = BLKSIZE - startByte; //number of BYTEs remain in this block
+        char *cp = wbuf + start; //cp points at startByte in wbuf[]
+        remain = BLKSIZE - start; //number of BYTEs remain in this block
 
-        while (remain>0){//write as much as remain allows
-            *cp++ = *cq++; //cq points at buf[] // SEG FAULT HERE
-            nbytes--; remain--; //dec counts
-            oftp->offset++; //advance offset
-            if(oftp->offset > mip->INODE.i_size) //especially for RW|APPEND mode
-                mip->INODE.i_size++; // inc file size (if offset > fileSize)
-            if(nbytes<=0) break; // if already nbytes, break
+        if (remain <= nbytes){
+            memcpy(cp, cq, remain); 
+            cq += remain;
+            cp += remain;
+            oftp->offset += remain; 
+            nbytes -= remain;
+            
         }
+        else
+        {
+            memcpy(cp, cq, remain);
+            cq += nbytes;
+            cp += nbytes;
+            oftp->offset += nbytes;
+            nbytes -= nbytes;
+        }
+        if(oftp->offset > mip->INODE.i_size) 
+        {
+            mip->INODE.i_size = oftp->offset;
+        }
+                
         put_block(mip->dev, blk, wbuf); //write wbuf[] to disk
     }
     // loop back to outer while to write more .... until nbytes are written

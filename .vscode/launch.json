@@ -1,5 +1,6 @@
 {
     
     "version": "0.2.0",
-    "configurations": []
+    "configurations": [],
+    "program": "\\wsl.localhost\\Ubuntu-20.04\\home\\jaysensen\\CPTS360\\FinalProject360\\mk2"
 }

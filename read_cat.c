@@ -55,7 +55,7 @@ int myread(int fd, char *buf, int nbytes)
         {                                                                   // Hint: Mailman’s algorithm
             char* tempbuf[BLKSIZE];
             get_block(mip->dev, mip->INODE.i_block[13], tempbuf);    
-            int block_size = (BLKSIZE / sizeof(int));
+            int block_size = (BLKSIZE / 4);
             lbk = lbk - block_size - 12;
             blk = tempbuf[lbk / block_size];
             get_block(mip->dev, blk, intbuf13);
@@ -71,10 +71,10 @@ int myread(int fd, char *buf, int nbytes)
         remain = BLKSIZE - start;   // number of bytes remain in readbuf[]
 
         if (nbytes <= remain)
-        {
-            memcpy(cq, cp, nbytes);
-            cq += nbytes;
-            cp += nbytes;
+        {                               // OPTIMIZATION: 
+            memcpy(cq, cp, nbytes);     // copy nbytes worth of bytes from cp(readbuf) to cq(buf)
+            cq += nbytes;               // rather than going one byte at a time
+            cp += nbytes;               // than increment everything by nbytes instead of just by one
             count += nbytes;
             oftp->offset += nbytes;
             avil -= nbytes;

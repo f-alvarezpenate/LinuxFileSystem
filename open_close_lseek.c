@@ -64,18 +64,18 @@ int open_file(char* pathname, char* mode)
         default: printf("invalid mode\n");
                  return(-1);
     }
-
+    oftp->offset = offset;
     int result = -1;
     int i;
     for (i = 0; i < NFD; i++)
     {
-        if (running->fd[i] == NULL)
+        if (running->fd[i] == NULL) //empty process found. We can open
         {
-            
+            running->fd[i] = oftp;
             result = i;
             break;
         }
-        else if(running->fd[i]->minodePtr == mip)
+        else if(running->fd[i]->minodePtr == mip) // file already opened. If not opened for read ret error bc files can only be open for more than 1 mode if one of them is read
         {
             if(imode != 0)
             {
@@ -83,32 +83,33 @@ int open_file(char* pathname, char* mode)
                 return -1;
             }
         }
-        else if(fd==NFD-1){
-            printf("open_file error: fd is full.\n");
-            iput(mip);
-            return -1;
-        }
     }
-    //add file to oft array
+    if(result == -1){ // no open process was found. Result variable not updated. Cant open file
+        printf("open_file error: fd is full.\n");
+        iput(mip);
+        return -1;
+    }
+    //add file to oft array created in main so that we can keep track of opened files easily with pfd() function
     int j;
+    int found;
     for (j = 0; j < NOFT; j++){
         if (oft[j].refCount==0){
             oft[j].mode = imode;
             oft[j].minodePtr = mip;
             oft[j].refCount++;
-            running->fd[i] = oftp;
+            found = 1; // found is true. Dont give error
             break;
         }
-        else if (i == NOFT - 1){
-            printf("open_file error: Too many files opened at once.\n");
-            iput(mip);
-            return;
-        }
+    }
+    if (!found){
+        printf("open_file error: Too many files opened at once.\n");
+        iput(mip);
+        return;
     }
     printf("INSIDE OPEN(), OUTSIDE OF LOOP. REFCOUNT = %d\n", oft[i].refCount);
-    mip->INODE.i_atime = time(0L);
+    mip->INODE.i_atime = time(NULL);
     mip->dirty = 1;
-    // iput(mip); //kc online thingy said not to put() here bc its already done in close
+    // iput(mip); //kc online thingy said not to put() here bc we have to wait until the file is closed
 
     return result;
 }
@@ -177,7 +178,7 @@ int truncate(MINODE* mip){
 
 }
 
-int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault
+int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault. SOLVED!
     
     printf("INSIDE CLOSE: fd=%d\n", fd);
     printf("FD: %d\n", fd);
@@ -190,31 +191,32 @@ int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Clos
         printf("close_file error: not in range.\n");
     }
     //2. verify running->fd[fd] is pointing at OFT entry
+    int found;
     for (i=0; i < NOFT; i++){
-        oftp = &oft[i]; //oft = openfiletable. 
+        oftp = &oft[i]; //oftp points at address of ith element in open file table 
         if (oftp->minodePtr == running->fd[fd]->minodePtr){
-            oftp->refCount--; // do this to update openfiletable global var
+            oftp->refCount--; // do this to update oft global array var so that the file is no longer displayed by pfd()
+            found = 1;
             break;
         }
-        //check if no file was found by using ith index
-        else if(i==NOFT-1){
-                printf("close_file error: file not pointing at OFT entry.\n");
-                return -1;
-            }
+    }
+    if (!found){
+        printf("close_file error: file not pointing at OFT entry.\n");
+        return -1;
     }
     //printf("refcount = %d\n", oftp->refCount);
     //3. The following code segments should be fairly obvious:
     oftp = running->fd[fd];
-    //printf("fd[fd]: refcount = %d\n", oftp->refCount); // refcount is unaffected by line 198 decrease since this refers to running->fd[fd] and not just the array keeping track
+    //printf("fd[fd]: refcount = %d\n", oftp->refCount); // refcount is unaffected by line 196 decrease since this refers to running->fd[fd] and not just the array keeping track
     oftp->refCount--; //                                  so we decrease it again in this line 
     //printf("refcount-- = %d\n", oftp->refCount);
 
     running->fd[fd] = 0;
-    if(oftp->refCount>0) return 0;//statement below is not printing. for some reason it thinks that its greater than 0
+    if(oftp->refCount>0) return 0;//statement below is not printing. for some reason it thinks that its greater than 0. SOLVED
     //printf("REFCOUNT NOT > ZERO LIKE IT SHOULD BE\n");
     //last user of this OFT entry ==> dispose of the Minode[]
     mip = oftp->minodePtr;
-    iput(mip);
+    iput(mip); // here's when we finally put the minode back from when we opened the file!
 
     return 0;
 }
@@ -280,7 +282,7 @@ int pfd(){
                     break;
             }
             printf("         %d         [%d,%d]\n", oft[i].offset, oft[i].minodePtr->dev, oft[i].minodePtr->ino);
-            printf("refcount: %d\n", oft[i].refCount); //refcount for each file is just blank for some reason
+            //printf("refcount: %d\n", oft[i].refCount); //refcount for each file is just blank for some reason. SOLVED
         }
         
        
