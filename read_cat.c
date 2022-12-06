@@ -1,11 +1,11 @@
-int read_file()
+int read_file(char *descriptor, char *bytes)
 {
-    int fd = 0, nbytes = 0; 
+    int fd = atoi(descriptor), nbytes = atoi(bytes); 
     char *buf[BLKSIZE];
-    printf("Enter an fd: ");
-    scanf("%d", &fd);
-    printf("Enter the number of bytes you would like to read: ");
-    scanf("%d", &nbytes);
+    //printf("Enter an fd: ");
+    //scanf("%d", &fd);
+    //printf("Enter the number of bytes you would like to read: ");
+    //scanf("%d", &nbytes);
 
     if(fd < 0 || fd > NFD-1)
     {
@@ -18,8 +18,17 @@ int read_file()
         printf("read_file error: file is not opened for RD or RW\n");
         return -1;
     }
-
-    return myread(fd, buf, nbytes);
+    printf("\n==================================");
+    printf("\nSTART------------OF------------CAT\n");
+    printf("==================================\n\n");
+    if (fd >= 0){
+        n = myread(fd, buf, nbytes);   
+        buf[n] = 0;
+        printf("%s", buf); // just printing the entirety of buf instead of going byte by byte 
+    }
+    printf("\n\n");
+    printf("read %d chars from fd: %d\n", nbytes, fd);
+    //return myread(fd, buf, nbytes);
 }
 
 int myread(int fd, char *buf, int nbytes)

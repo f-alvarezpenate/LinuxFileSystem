@@ -85,7 +85,7 @@ int open_file(char* pathname, char* mode)
         }
     }
     if(result == -1){ // no open process was found. Result variable not updated. Cant open file
-        printf("open_file error: fd is full.\n");
+        printf("open_file error: no avail processes.\n");
         iput(mip);
         return -1;
     }
@@ -106,7 +106,7 @@ int open_file(char* pathname, char* mode)
         iput(mip);
         return;
     }
-    printf("INSIDE OPEN(), OUTSIDE OF LOOP. REFCOUNT = %d\n", oft[i].refCount);
+    //printf("INSIDE OPEN(), OUTSIDE OF LOOP. REFCOUNT = %d\n", oft[i].refCount);
     mip->INODE.i_atime = time(NULL);
     mip->dirty = 1;
     // iput(mip); //kc online thingy said not to put() here bc we have to wait until the file is closed
@@ -180,8 +180,8 @@ int truncate(MINODE* mip){
 
 int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Closing the second one as well gives segmentation fault. SOLVED!
     
-    printf("INSIDE CLOSE: fd=%d\n", fd);
-    printf("FD: %d\n", fd);
+    //printf("INSIDE CLOSE: fd=%d\n", fd);
+    //printf("FD: %d\n", fd);
     int i;
     OFT *oftp, *temp;
     MINODE* mip;
@@ -201,7 +201,7 @@ int close_file(int fd){ //PROBLEM: if you open 2 files and close 1 of them. Clos
         }
     }
     if (!found){
-        printf("close_file error: file not pointing at OFT entry.\n");
+        printf("close_file error: file is not an OFT entry.\n");
         return -1;
     }
     //printf("refcount = %d\n", oftp->refCount);

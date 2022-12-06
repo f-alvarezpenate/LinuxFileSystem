@@ -1,16 +1,16 @@
-int write_file(){
+int write_file(char* descriptor, char* text){
     //1. ask for a fd and a text string to write;
     //e.g. write 1 123455009483059
     //2. verify fd is indeed opened for WR or RW or APPEND mode
     //3. copy the text string into a buf[] and get its length as nbytes.
-    int fd = 0, nbytes = 0;
-    char tempbuf[BLKSIZE];
-    printf("Enter a file descriptor: ");
-    scanf("%d", &fd);
-    printf("Enter what you would like to write: ");
-    scanf("%s", &tempbuf);
+    int fd = atoi(descriptor), nbytes = strlen(text);
+    //char tempbuf[BLKSIZE];
+    //printf("Enter a file descriptor: ");
+    //scanf("%d", &fd);
+    //printf("Enter what you would like to write: ");
+    //scanf("%s", &tempbuf);
     
-    nbytes = strlen(tempbuf);
+    //nbytes = strlen(tempbuf);
     printf("nbytes: %d\n", nbytes);
     OFT *oftp;
     //1. verify fd is within range.
@@ -38,7 +38,7 @@ int write_file(){
         printf("write_file error: file not pointing at OFT entry.\n");
         return -1;
     }
-    return mywrite(fd, tempbuf, nbytes);
+    return mywrite(fd, text, nbytes);
 }
 
 int mywrite(int fd, char buf[], int nbytes){

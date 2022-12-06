@@ -124,7 +124,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n",root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|open|close|pfd|read|cat|write|cp|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|unlink|symlink|readlink|open|close|pfd|read|cat|write|cp|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -155,6 +155,8 @@ int main(int argc, char *argv[ ])
         unlink(pathname);
     else if(strcmp(cmd, "symlink")==0)
         symlink(pathname, filename);
+    else if(strcmp(cmd, "readlink")==0)
+        readlink(pathname);
     else if(strcmp(cmd, "open")==0)
         open_file(pathname, filename);  
     else if(strcmp(cmd, "close")==0)
@@ -162,11 +164,11 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "pfd")==0)
         pfd(); 
     else if(strcmp(cmd, "read")==0)
-        read_file();
+        read_file(pathname, filename);
     else if(strcmp(cmd, "cat")==0)
         cat_file(pathname);
     else if(strcmp(cmd, "write")==0)
-        write_file();
+        write_file(pathname, filename);
     else if(strcmp(cmd, "cp")==0)
         cp_file(pathname, filename);
     

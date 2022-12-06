@@ -67,13 +67,20 @@ int symlink(char *old_file, char *new_file)
     return 0;
 }
 
-int readlink(char* filename, char *buffer){
+int readlink(char* filename){
+    char mybuf[BLKSIZE];
+    int size = myreadlink(filename, mybuf);
+    printf("%s file size = %d\n", filename, size);
+    return 0;
+}
+
+int myreadlink(char* filename, char *buffer){
     //get file's INODE in memory 
     int ino = getino(filename);
     //verify its a LNK file
     MINODE *mip = iget(dev, ino);
     if (!S_ISLNK(mip->INODE.i_mode)){
-        printf("%s is not a LNK file.", filename);
+        printf("%s is not a LNK file.\n", filename);
         return -1;
     }
     buffer = mip->INODE.i_block; // copy target filename from INODE.i_block into buffer
