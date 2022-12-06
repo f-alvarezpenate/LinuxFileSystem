@@ -54,7 +54,7 @@ int mywrite(int fd, char buf[], int nbytes){
         // write indirect data blocks and double indirect data blocks
     
 
-        if (lbk < 12){ //direct block
+        if (lbk < 12){ //direct blocks
             if (mip->INODE.i_block[lbk] == 0){//if no data block yet
                 mip->INODE.i_block[lbk] = balloc(mip->dev); // MUST allocate a block
             }

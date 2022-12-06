@@ -30,7 +30,8 @@ int myread(int fd, char *buf, int nbytes)
     MINODE *mip = oftp->minodePtr;
     char *buf12, *buf13;
     avil = mip->INODE.i_size - oftp->offset;
-    int ibuf12[BLKSIZE], ibuf13[BLKSIZE];
+    int intbuf12[BLKSIZE];
+    int intbuf13[BLKSIZE];
     if(nbytes > avil)
     {
         nbytes = avil;
@@ -45,26 +46,27 @@ int myread(int fd, char *buf, int nbytes)
         {
             blk = mip->INODE.i_block[lbk];
         }
-        else if(lbk >= 12 && lbk < 256 + 12) // indirect blocks                     
+        else if(lbk >= 12 && lbk < 256 + 12) // indirect blocks             // is responsible for "large" file
         {
-            get_block(mip->dev, mip->INODE.i_block[12], buf12);
-            blk = ibuf12[lbk - 12];
+            get_block(mip->dev, mip->INODE.i_block[12], intbuf12);
+            blk = intbuf12[lbk - 12];
         }
-        else // double indirect blocks
-        {
-            get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf12);     // Hint: Mailman’s algorithm
+        else // double indirect blocks                                      // is responsible for "huge" file
+        {                                                                   // Hint: Mailman’s algorithm
+            char* tempbuf[BLKSIZE];
+            get_block(mip->dev, mip->INODE.i_block[13], tempbuf);    
             int block_size = (BLKSIZE / sizeof(int));
             lbk = lbk - block_size - 12;
-            blk = ibuf13[lbk / block_size];
-            get_block(mip->dev, blk, ibuf13);
-            blk = ibuf13[lbk % block_size];
+            blk = tempbuf[lbk / block_size];
+            get_block(mip->dev, blk, intbuf13);
+            blk = intbuf13[lbk % block_size];
         }
          /* get the data block into readbuf[BLKSIZE] */
         char readbuf[BLKSIZE];
         get_block(mip->dev, blk, readbuf);
 
         /* copy from startByte to buf[ ], at most remain bytes in this block */
-        char* cq = buf;
+        char* cq = buf;             // cq points at buf[]
         char *cp = readbuf + start;   
         remain = BLKSIZE - start;   // number of bytes remain in readbuf[]
 
@@ -102,6 +104,7 @@ int cat_file(char* filename)
     int n;
     int total = 0;
     char mode[BLKSIZE];
+    char* cp;
     strcpy(mode, "0");
     printf("Mode: %s", mode);
     int fd = open_file(filename, mode);
@@ -113,19 +116,20 @@ int cat_file(char* filename)
         {   
             total += n;
             mybuf[n] = 0;
-            char* cp = mybuf;
-            while(*cp != '\0') // means we've reached the end
-            {
-                if(*cp == '\n') // handles new lines
-                {
-                    printf("\n");
-                }
-                else
-                {
-                    printf("%c", *cp);
-                }
-                cp++;
-            }
+            printf("%s", mybuf); // just printing the entirety of buf instead of going byte by byte
+            // cp = mybuf;
+            // while(*cp != '\0') // means we've reached the end
+            // {
+            //     if(*cp == '\n') // handles new lines
+            //     {
+            //         printf("\n");
+            //     }
+            //     else
+            //     {
+            //         printf("%c", *cp);  // printing what cp is pointing at in mybuf
+            //     }
+            //     cp++;   // incrementing by each byte
+            // }
         }
     }
     printf("\n\n");
