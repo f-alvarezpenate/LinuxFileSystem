@@ -157,7 +157,9 @@ int enter_name(MINODE *pip, int myino, char *myname)
                 return 0;
             }
             else
-            {
+            {   //if no space in data blocks 
+                //alloc a new data block and increment parent size by BLKSIZE
+                //
                 int new_block = balloc(pip->dev);
                 ip->i_blocks++;
                 ip->i_block[i] = new_block;
