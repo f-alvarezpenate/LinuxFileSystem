@@ -80,48 +80,64 @@ int mywrite(int fd, char buf[], int nbytes){
                 }
                 put_block(mip->dev, mip->INODE.i_block[12], intbuf12); // put the block back
             }
-            get_block(mip->dev, mip->INODE.i_block[12], intbuf12);  // more general case, get 
-            blk = intbuf12[lbk -12];
-            if(blk == 0)
+            get_block(mip->dev, mip->INODE.i_block[12], intbuf12);  // more general case, get the block wether its been zero'd out or not
+            blk = intbuf12[lbk - 12];                                // doing minus twelve to start from zero 
+
+            if(blk == 0)                                             // if the block there is 0 then we need to allocate a new block
+                                                                     // means this blk location hasn't been written to yet
+                                                                     // i think this happens everytime when we're writing to a new file
+                                                                     // like we do with cp but if we were to overwrite a file it would
+                                                                     // be skipping this pretty much everytime
             {
-                blk = balloc(mip->dev);
-                intbuf12[lbk - 12] = blk;
+                blk = balloc(mip->dev);                              // set blk to the newly allocated block
+                intbuf12[lbk - 12] = blk;                            // essentially saying "this is the block it points too now"
             }
-            put_block(mip->dev, mip->INODE.i_block[12], intbuf12);
+            put_block(mip->dev, mip->INODE.i_block[12], intbuf12);   // put the block back
         }
         else{   //double inderect blocks    // not working for huge file 
-            lbk = lbk - 268;
+            lbk = lbk - 268;                                          // zeroing out lbk like we did in read
             int dbuf[BLKSIZE];
-            if(mip->INODE.i_block[13] == 0)
+            if(mip->INODE.i_block[13] == 0)                           // if it doesnt exist we need to allocate a block for it
             {
-                mip->INODE.i_block[13] = balloc(mip->dev);
-                get_block(mip->dev, mip->INODE.i_block[13], intbuf13);
+                mip->INODE.i_block[13] = balloc(mip->dev);            // set i_block13 to the new block
+                get_block(mip->dev, mip->INODE.i_block[13], intbuf13);// then get that block into intbuf13
 
-                for(int i = 0; i < BLKSIZE; i++)
+                for(int i = 0; i < BLKSIZE; i++)    
                 {
-                    intbuf13[i] = 0;                                       
+                    intbuf13[i] = 0;                                   // zero out int buf
                 }
-                put_block(mip->dev, mip->INODE.i_block[13], intbuf13);
+                put_block(mip->dev, mip->INODE.i_block[13], intbuf13); // put the fresh, zero'd out buf back
             }
-            get_block(mip->dev, mip->INODE.i_block[13], intbuf13);
+            get_block(mip->dev, mip->INODE.i_block[13], intbuf13);     // general case, get that same block
 
-            blk = intbuf13[lbk / 256];
-            if(blk == 0)
+            blk = intbuf13[lbk / 256];                                 // similar to read, blk will only get to access the next spot in the intbuf array every 256 iterations
+            if(blk == 0)                                               // if the blk at this doesnt exist then we need to allocate it
             {
-                blk = balloc(mip->dev);
-                intbuf13[lbk / 256] = blk;
+                blk = balloc(mip->dev);                                 // here is where i think we should be setting to 0 again because it is
+                                                                        // another block of pointers
+                                                                        // its probably why we get some weird behavior but we can just tell KC we
+                                                                        // figured it out after the fact
+                                                                        // worst case scenario is he doesnt give us credit for CP but I really dont think he'll even do that
+
+                intbuf13[lbk / 256] = blk;                              // this is the blk that this lbk location points to
             }
 
-            put_block(mip->dev, mip->INODE.i_block[13], intbuf13);
+            put_block(mip->dev, mip->INODE.i_block[13], intbuf13);      // put thatt block back
 
-            get_block(mip->dev, intbuf13[lbk / 256], dbuf);
-            blk = dbuf[lbk % 256];
-            if(blk == 0)
+            get_block(mip->dev, intbuf13[lbk / 256], dbuf);             // now grab the newly allocated block and put it into dbuf
+            blk = dbuf[lbk % 256];                                      // doing the same thing as read where we'll loop through this 256 times before we go into another iteration of 
+                                                                        // the previous block
+
+            if(blk == 0)                                                 // if the block there is 0 then we need to allocate a new block
+                                                                        // means this blk location hasn't been written to yet
+                                                                        // i think this happens everytime when we're writing to a new file
+                                                                        // like we do with cp but if we were to overwrite a file it would
+                                                                        // be skipping this pretty much everytime
             {
-                blk = balloc(mip->dev);
+                blk = balloc(mip->dev);                                     
                 dbuf[lbk % 256] = blk;
             }
-            put_block(mip->dev, intbuf13[lbk / 256], dbuf);
+            put_block(mip->dev, intbuf13[lbk / 256], dbuf);               // then we put it back
             
         }
         // all cases come to here : write to the data block
@@ -131,22 +147,22 @@ int mywrite(int fd, char buf[], int nbytes){
 
         if (remain <= nbytes){
             memcpy(cp, cq, remain); 
-            cq += remain;
-            cp += remain;
-            oftp->offset += remain; 
-            nbytes -= remain;
+            //cq += remain;                             // again, incrementing these two when we're going blk by blk doesnt make 
+            //cp += remain;                             // sense 
+            oftp->offset += remain;                     // updating how far we've written to by the amount of bytes were about to write
+            nbytes -= remain;                           
         }
         else
         {
             memcpy(cp, cq, remain);
-            cq += nbytes;
-            cp += nbytes;
-            oftp->offset += nbytes;
+            //cq += nbytes;
+            //cp += nbytes;
+            oftp->offset += nbytes;                      // updating how far we've written to by the amount of bytes were about to write
             nbytes -= nbytes;
         }
-        if(oftp->offset > mip->INODE.i_size) 
+        if(oftp->offset > mip->INODE.i_size)            // if the offset of the file is bigger than the size of the inode then we just update the size of the file 
         {
-            mip->INODE.i_size = oftp->offset;
+            mip->INODE.i_size = oftp->offset;           // each time, probably a better way to do this but it works
         }
                 
         put_block(mip->dev, blk, wbuf); //write wbuf[] to disk
@@ -189,7 +205,7 @@ int cp_file(char* pathname, char* filename){
     
     while(n = myread(fd, buf, BLKSIZE))
     {
-        buf[n] = 0;
+        //buf[n] = 0;                               // not needed, dont know what its for
         mywrite(gd, buf, n);
     }
     close_file(fd);

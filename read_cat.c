@@ -47,7 +47,7 @@ int myread(int fd, char *buf, int nbytes)
     }
 
     // this entire loop is to get the correct blk number that we want to read
-    // we use lbk (logical block) to do this
+    // we use lbk (logical block) to do this   
     while(nbytes && avil)
     {
         lbk = oftp->offset / BLKSIZE;           // basically amounts to how many times we have written BLKZISE number of bytes
@@ -121,8 +121,8 @@ int myread(int fd, char *buf, int nbytes)
                                         // rather than going one byte at a time
                                         // then increment everything by nbytes instead of just by one
 
-            cq += nbytes;               // REALIZED INCREMENTING CP AND CQ DOESNT DO ANYTHING
-            cp += nbytes;               // COULD CERTAINLY BE ASKED ABOUT THIS IF WE DONT CHANGE IT
+            //cq += nbytes;               // REALIZED INCREMENTING CP AND CQ DOESNT DO ANYTHING
+            //cp += nbytes;               // COULD CERTAINLY BE ASKED ABOUT THIS IF WE DONT CHANGE IT
 
             count += nbytes;            // count is just the number of bytes that that we have read so keep incrementing it by nybtes AKA BLKSIZE
 
