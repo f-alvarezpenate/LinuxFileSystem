@@ -69,11 +69,12 @@ int mount_root()
   root = iget(dev, 2);
 }
 
-//char *disk = "disk2";     // change this to YOUR virtual // WE HAVE TO CHANGE THIS ARGV[1] FOR THE DEMO SO TA's AND KC CAN TRY DIFFERENT DISKS!
-char *disk; // now whoever is running the code can change disks easily. uncomment when ready to use e.g.    ./a.out disk2
+char *disk = "disk2";     // change this to YOUR virtual // WE HAVE TO CHANGE THIS ARGV[1] FOR THE DEMO SO TA's AND KC CAN TRY DIFFERENT DISKS!
+//char *disk; // now whoever is running the code can change disks easily. uncomment when ready to use e.g.    ./a.out disk2
 int main(int argc, char *argv[ ])
 {
-  disk = argv[1]; // has to be assigned arg[1] value inside of main now. Cant be outside like it was before
+  //argv[1] = "disk2";
+  //disk = argv[1]; // has to be assigned arg[1] value inside of main now. Cant be outside like it was before
   int ino;
   char buf[BLKSIZE];
 
