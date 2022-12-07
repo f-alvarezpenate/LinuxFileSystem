@@ -46,13 +46,14 @@ int mywrite(int fd, char buf[], int nbytes){
     int lbk, start, remain, avil, blk;
     OFT *oftp = running->fd[fd];
     MINODE *mip = oftp->minodePtr;
-    char buf12[BLKSIZE], buf13[BLKSIZE];
     char* cq = buf;
     avil = mip->INODE.i_size - oftp->offset;
     int intbuf12[256];
     int intbuf13[256];
     char wbuf[BLKSIZE];
     
+
+    // very similar to read except when you need to allocate space for blocks that dont already exist
     while (nbytes > 0){
         //compute logical block (lbk) and the startByte in that lbk:
         lbk = oftp->offset / BLKSIZE;
@@ -69,17 +70,17 @@ int mywrite(int fd, char buf[], int nbytes){
         }
         else if(lbk>= 12 && lbk < 256+12){ // indirect blocks       // not working for large file. SOLVED
             //HELP INFO:
-            if (mip->INODE.i_block[12] == 0)
+            if (mip->INODE.i_block[12] == 0)                        // means we need to allocate space for it
             {
-                mip->INODE.i_block[12] = balloc(mip->dev);
-                get_block(mip->dev, mip->INODE.i_block[12], buf12);
+                mip->INODE.i_block[12] = balloc(mip->dev);          // set mip->INODE.i_block[12] = to a newly allocated block
+                get_block(mip->dev, mip->INODE.i_block[12], intbuf12); // now go get that block into buf12
                 for(int i = 0; i < BLKSIZE; i++)
                 {
-                    buf12[i] = 0;                                       
+                    intbuf12[i] = 0;                                   // now loop through and set everything to 0
                 }
-                put_block(mip->dev, mip->INODE.i_block[12], buf12);
+                put_block(mip->dev, mip->INODE.i_block[12], intbuf12); // put the block back
             }
-            get_block(mip->dev, mip->INODE.i_block[12], intbuf12);
+            get_block(mip->dev, mip->INODE.i_block[12], intbuf12);  // more general case, get 
             blk = intbuf12[lbk -12];
             if(blk == 0)
             {
@@ -89,37 +90,38 @@ int mywrite(int fd, char buf[], int nbytes){
             put_block(mip->dev, mip->INODE.i_block[12], intbuf12);
         }
         else{   //double inderect blocks    // not working for huge file 
+            lbk = lbk - 268;
             int dbuf[BLKSIZE];
             if(mip->INODE.i_block[13] == 0)
             {
                 mip->INODE.i_block[13] = balloc(mip->dev);
-                get_block(mip->dev, mip->INODE.i_block[13], buf13);
+                get_block(mip->dev, mip->INODE.i_block[13], intbuf13);
 
                 for(int i = 0; i < BLKSIZE; i++)
                 {
-                    buf13[i] = 0;                                       
+                    intbuf13[i] = 0;                                       
                 }
-                put_block(mip->dev, mip->INODE.i_block[13], buf13);
+                put_block(mip->dev, mip->INODE.i_block[13], intbuf13);
             }
             get_block(mip->dev, mip->INODE.i_block[13], intbuf13);
 
-            blk = intbuf13[(lbk - 268) / 256];
+            blk = intbuf13[lbk / 256];
             if(blk == 0)
             {
                 blk = balloc(mip->dev);
-                intbuf13[(lbk - 268)/256] = blk;
+                intbuf13[lbk / 256] = blk;
             }
 
             put_block(mip->dev, mip->INODE.i_block[13], intbuf13);
 
-            get_block(mip->dev, intbuf13[(lbk - 268) / 256], dbuf);
-            blk = dbuf[(lbk - 268) % 256];
+            get_block(mip->dev, intbuf13[lbk / 256], dbuf);
+            blk = dbuf[lbk % 256];
             if(blk == 0)
             {
                 blk = balloc(mip->dev);
-                dbuf[(lbk - 268) % 256] = blk;
+                dbuf[lbk % 256] = blk;
             }
-            put_block(mip->dev, intbuf13[(lbk - 268) / 256], dbuf);
+            put_block(mip->dev, intbuf13[lbk / 256], dbuf);
             
         }
         // all cases come to here : write to the data block
